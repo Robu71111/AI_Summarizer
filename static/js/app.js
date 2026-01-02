@@ -1,0 +1,425 @@
+// app.js - Main application JavaScript with all new features
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Elements
+  const lengthRange = document.getElementById('lengthRange');
+  const lengthInput = document.getElementById('lengthInput');
+  const lengthOptions = document.querySelectorAll('.length-option');
+  const modeTabs = document.querySelectorAll('.mode-tab');
+  const modeInput = document.getElementById('modeInput');
+  const userTextArea = document.getElementById('user_text');
+  const inputStats = document.getElementById('inputStats');
+  const summarizeForm = document.getElementById('summarizeForm');
+  const loadingOverlay = document.getElementById('loadingOverlay');
+  const copyBtn = document.getElementById('copyBtn');
+  const themeToggle = document.getElementById('themeToggle');
+  const themeIcon = document.getElementById('themeIcon');
+  
+  // File upload elements
+  const fileUpload = document.getElementById('fileUpload');
+  const fileName = document.getElementById('fileName');
+  const clearFileBtn = document.getElementById('clearFile');
+  
+  // Export buttons
+  const exportTxt = document.getElementById('exportTxt');
+  const exportPdf = document.getElementById('exportPdf');
+  
+  // History elements
+  const historySection = document.getElementById('historySection');
+  const historyList = document.getElementById('historyList');
+  const clearHistoryBtn = document.getElementById('clearHistory');
+
+  // ==================== Dark/Light Mode Toggle ====================
+  
+  // Initialize theme from localStorage or system preference
+  const savedTheme = localStorage.getItem('theme');
+  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const initialTheme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
+  
+  document.documentElement.setAttribute('data-theme', initialTheme);
+  updateThemeIcon(initialTheme);
+
+  if (themeToggle) {
+    themeToggle.addEventListener('click', function() {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      
+      // Animation effect
+      themeToggle.style.transform = 'scale(0.8) rotate(180deg)';
+      
+      setTimeout(() => {
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateThemeIcon(newTheme);
+        themeToggle.style.transform = ''; // Reset via CSS transition
+      }, 150);
+    });
+  }
+
+  function updateThemeIcon(theme) {
+    if (themeIcon) {
+      themeIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+    }
+  }
+
+  // ==================== File Upload Handling ====================
+  
+  if (fileUpload) {
+    fileUpload.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        fileName.textContent = file.name;
+        if (clearFileBtn) clearFileBtn.style.display = 'flex';
+        
+        // Clear and disable text area when file is selected
+        userTextArea.value = '';
+        userTextArea.disabled = true;
+        userTextArea.style.opacity = '0.6';
+        userTextArea.placeholder = 'File selected. Text input disabled.';
+        updateWordCount();
+      }
+    });
+  }
+  
+  if (clearFileBtn) {
+    clearFileBtn.addEventListener('click', function() {
+      fileUpload.value = '';
+      fileName.textContent = '';
+      clearFileBtn.style.display = 'none';
+      userTextArea.disabled = false;
+      userTextArea.style.opacity = '1';
+      userTextArea.placeholder = 'Paste or type your text here... (Max 50,000 characters)';
+      updateWordCount();
+    });
+  }
+
+  // ==================== Summary History Management ====================
+  
+  loadHistory();
+  
+  // Logic to save a newly generated summary to history
+  const summaryOutputElement = document.querySelector('.summary-output');
+  if (summaryOutputElement && summaryOutputElement.textContent.trim().length > 50) {
+    // Check if this is a fresh result (not just loaded from history)
+    const isNewResult = !summaryOutputElement.hasAttribute('data-from-history');
+    
+    if (isNewResult) {
+        const inputWordCount = getWordCount(userTextArea.value);
+        const summaryText = summaryOutputElement.textContent.trim();
+        const summaryWordCount = getWordCount(summaryText);
+        
+        saveToHistory({
+          summary: summaryText,
+          inputWords: inputWordCount || (summaryWordCount * 3), // Fallback if input empty (e.g. file upload)
+          summaryWords: summaryWordCount,
+          timestamp: new Date().toISOString()
+        });
+    }
+  }
+  
+  function getWordCount(text) {
+    return text.trim().length > 0 ? text.trim().split(/\s+/).length : 0;
+  }
+
+  function saveToHistory(item) {
+    let history = JSON.parse(localStorage.getItem('summaryHistory') || '[]');
+    
+    // Avoid duplicates
+    const isDuplicate = history.some(h => h.summary.substring(0, 100) === item.summary.substring(0, 100));
+    if (isDuplicate) return;
+
+    history.unshift(item);
+    if (history.length > 10) history = history.slice(0, 10);
+    
+    localStorage.setItem('summaryHistory', JSON.stringify(history));
+    loadHistory();
+  }
+  
+  function loadHistory() {
+    if (!historySection || !historyList) return;
+    
+    const history = JSON.parse(localStorage.getItem('summaryHistory') || '[]');
+    
+    if (history.length === 0) {
+      historySection.style.display = 'none';
+      return;
+    }
+    
+    historySection.style.display = 'block';
+    historyList.innerHTML = '';
+    
+    history.forEach((item, index) => {
+      const historyItem = createHistoryItem(item, index);
+      historyList.appendChild(historyItem);
+    });
+  }
+  
+  function createHistoryItem(item, index) {
+    const div = document.createElement('div');
+    div.className = 'history-item';
+    
+    const date = new Date(item.timestamp);
+    const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    
+    div.innerHTML = `
+      <div class="history-item-header">
+        <span class="history-item-date">${formattedDate}</span>
+        <div class="history-item-actions">
+          <button class="history-action-btn use-btn" title="Restore to view">
+            <i class="fas fa-redo"></i>
+          </button>
+          <button class="history-action-btn copy-btn" title="Copy text">
+            <i class="fas fa-copy"></i>
+          </button>
+          <button class="history-action-btn delete-btn" title="Delete">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </div>
+      <div class="history-item-preview">${item.summary}</div>
+      <div class="history-item-stats">
+        <span class="history-stat">
+          <i class="fas fa-file-word"></i> ${item.summaryWords} words
+        </span>
+        <span class="history-stat">
+          <i class="fas fa-chart-line"></i> ${Math.round((item.summaryWords / item.inputWords) * 100)}% reduced
+        </span>
+      </div>
+    `;
+    
+    // Use button: Restores summary to the output box
+    div.querySelector('.use-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const output = document.querySelector('.summary-output');
+      if (output) {
+        output.textContent = item.summary;
+        output.setAttribute('data-from-history', 'true');
+        window.scrollTo({top: output.offsetTop - 100, behavior: 'smooth'});
+        showNotification('Summary restored!', 'success');
+      }
+    });
+    
+    // Copy button
+    div.querySelector('.copy-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      copyToClipboard(item.summary);
+    });
+    
+    // Delete button
+    div.querySelector('.delete-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      deleteHistoryItem(index);
+    });
+
+    return div;
+  }
+  
+  function deleteHistoryItem(index) {
+    let history = JSON.parse(localStorage.getItem('summaryHistory') || '[]');
+    history.splice(index, 1);
+    localStorage.setItem('summaryHistory', JSON.stringify(history));
+    loadHistory();
+    showNotification('Item removed from history', 'success');
+  }
+  
+  if (clearHistoryBtn) {
+    clearHistoryBtn.addEventListener('click', function() {
+      if (confirm('Clear all saved summaries?')) {
+        localStorage.removeItem('summaryHistory');
+        loadHistory();
+        showNotification('History cleared', 'success');
+      }
+    });
+  }
+
+  // ==================== Length Slider & Mode Tabs ====================
+  
+  function updateLengthUI(value) {
+    lengthOptions.forEach(option => {
+      option.classList.toggle('active', option.getAttribute('data-value') === value);
+    });
+  }
+
+  if (lengthRange) {
+    lengthRange.addEventListener('input', (e) => {
+      lengthInput.value = e.target.value;
+      updateLengthUI(e.target.value);
+    });
+  }
+
+  lengthOptions.forEach(option => {
+    option.addEventListener('click', function() {
+      const val = this.getAttribute('data-value');
+      if (lengthRange) lengthRange.value = val;
+      if (lengthInput) lengthInput.value = val;
+      updateLengthUI(val);
+    });
+  });
+
+  modeTabs.forEach(tab => {
+    tab.addEventListener('click', function(e) {
+      e.preventDefault();
+      modeTabs.forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+      if (modeInput) modeInput.value = this.getAttribute('data-mode');
+    });
+  });
+
+  // ==================== Real-time Word Count ====================
+  
+  function updateWordCount() {
+    const text = userTextArea.value.trim();
+    const words = getWordCount(text);
+    const chars = text.length;
+    
+    if (inputStats) {
+      inputStats.textContent = `${words} words • ${chars} characters`;
+      
+      // Visual warnings for limit
+      if (chars > 48000) {
+        inputStats.style.color = 'var(--danger)';
+        inputStats.style.fontWeight = 'bold';
+      } else {
+        inputStats.style.color = '';
+        inputStats.style.fontWeight = '';
+      }
+    }
+  }
+
+  if (userTextArea) {
+    userTextArea.addEventListener('input', updateWordCount);
+  }
+
+  // ==================== Export & Form Submission ====================
+  
+  if (summarizeForm) {
+    summarizeForm.addEventListener('submit', function(e) {
+      const text = userTextArea.value.trim();
+      const hasFile = fileUpload && fileUpload.files.length > 0;
+      
+      if (!text && !hasFile) {
+        e.preventDefault();
+        showNotification('Please provide text or a file', 'error');
+        return;
+      }
+      
+      if (loadingOverlay) loadingOverlay.classList.add('active');
+    });
+  }
+
+  const exportActions = [
+    { el: exportTxt, action: '/export/txt' },
+    { el: exportPdf, action: '/export/pdf' }
+  ];
+
+  exportActions.forEach(({ el, action }) => {
+    if (el) {
+      el.addEventListener('click', () => {
+        const output = document.querySelector('.summary-output');
+        if (!output || !output.textContent.trim()) {
+            showNotification('Nothing to export yet!', 'error');
+            return;
+        }
+        
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = action;
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'summary_text';
+        input.value = output.textContent;
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+        showNotification('Downloading...', 'success');
+      });
+    }
+  });
+
+  // ==================== Clipboard Logic ====================
+  
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      const output = document.querySelector('.summary-output');
+      if (output) copyToClipboard(output.textContent);
+    });
+  }
+  
+  async function copyToClipboard(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      showCopySuccess();
+    } catch (err) {
+      // Fallback
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      showCopySuccess();
+    }
+  }
+
+  function showCopySuccess() {
+    if (copyBtn) {
+      const originalHTML = copyBtn.innerHTML;
+      copyBtn.classList.add('copied');
+      copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+      setTimeout(() => {
+        copyBtn.classList.remove('copied');
+        copyBtn.innerHTML = originalHTML;
+      }, 2000);
+    } else {
+      showNotification('Copied to clipboard!', 'success');
+    }
+  }
+
+  // ==================== UI Notifications & Shortcuts ====================
+  
+  function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'error' ? 'danger' : 'success'} notification-toast`;
+    notification.innerHTML = `<i class="fas fa-${type === 'error' ? 'exclamation-circle' : 'check-circle'}"></i> ${message}`;
+    
+    notification.style.cssText = `
+      position: fixed; bottom: 20px; left: 20px; z-index: 10000;
+      min-width: 250px; padding: 1rem; border-radius: 12px;
+      box-shadow: var(--shadow-lg); background: var(--bg-primary);
+      border-left: 5px solid ${type === 'error' ? 'var(--danger)' : 'var(--success)'};
+      animation: slideInLeft 0.3s ease forwards;
+    `;
+    
+    document.body.appendChild(notification);
+    setTimeout(() => {
+      notification.style.animation = 'fadeOut 0.5s ease forwards';
+      setTimeout(() => notification.remove(), 500);
+    }, 3000);
+  }
+
+  // Animation styles for notifications
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes slideInLeft { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+  `;
+  document.head.appendChild(style);
+
+  // Keyboard Shortcuts
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && document.activeElement === userTextArea) {
+      summarizeForm.submit();
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      userTextArea.focus();
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+      e.preventDefault();
+      if (themeToggle) themeToggle.click();
+    }
+  });
+
+  console.log('🚀 AI Summarizer Active');
+});

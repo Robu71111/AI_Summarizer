@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI Text Summarizer | Smart Content Compression</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+
+  <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+    <i class="fas fa-moon" id="themeIcon"></i>
+  </button>
+
+  <header class="app-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="logo-section">
+          <i class="fas fa-magic"></i>
+          <h1 class="app-title">AI Summarizer</h1>
+        </div>
+        <p class="app-subtitle">
+          Transform lengthy text into concise, meaningful summaries with AI
+        </p>
+      </div>
+    </div>
+  </header>
+
+  <div class="container main-container">
+    
+    {% if error %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      <i class="fas fa-exclamation-circle"></i> {{ error }}
+      <button type="button" class="close" data-dismiss="alert">
+        <span>&times;</span>
+      </button>
+    </div>
+    {% endif %}
+
+    <div class="controls-card">
+      <div class="row">
+        <div class="col-md-6 mb-3 mb-md-0">
+          <label class="control-label">
+            <i class="fas fa-sliders-h"></i> Summary Length
+          </label>
+          <div class="length-control">
+            <input type="range" min="1" max="3" step="1" value="{{ selected_length or '2' }}"
+                   class="custom-range" id="lengthRange">
+            <div class="length-labels">
+              <span class="length-option" data-value="1">Short</span>
+              <span class="length-option active" data-value="2">Medium</span>
+              <span class="length-option" data-value="3">Long</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="control-label">
+            <i class="fas fa-align-left"></i> Output Format
+          </label>
+          <div class="mode-tabs">
+            <button class="mode-tab {% if not selected_mode or selected_mode == 'paragraph' %}active{% endif %}" 
+                    data-mode="paragraph">
+              <i class="fas fa-paragraph"></i> Paragraph
+            </button>
+            <button class="mode-tab {% if selected_mode == 'bullets' %}active{% endif %}" 
+                    data-mode="bullets">
+              <i class="fas fa-list-ul"></i> Bullets
+            </button>
+            <button class="mode-tab {% if selected_mode == 'takeaways' %}active{% endif %}" 
+                    data-mode="takeaways">
+              <i class="fas fa-lightbulb"></i> Key Points
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-lg-6 mb-4">
+        <div class="card input-card">
+          <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+              <span><i class="fas fa-edit"></i> Input Text</span>
+              <span class="word-count" id="inputStats">0 words • 0 characters</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <form id="summarizeForm" method="POST" action="/generate" enctype="multipart/form-data">
+              <input type="hidden" name="length" id="lengthInput" value="{{ selected_length or '2' }}">
+              <input type="hidden" name="mode" id="modeInput" value="{{ selected_mode or 'paragraph' }}">
+              
+              <div class="file-upload-section">
+                <label class="file-upload-label">
+                  <input type="file" name="file_upload" id="fileUpload" accept=".pdf,.docx,.txt" style="display: none;">
+                  <div class="file-upload-btn">
+                    <i class="fas fa-upload"></i> Upload File (PDF, DOCX, TXT)
+                  </div>
+                </label>
+                <span id="fileName" class="file-name"></span>
+                <button type="button" id="clearFile" class="clear-file-btn" style="display: none;">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+              
+              <div class="text-divider">
+                <span>OR</span>
+              </div>
+              
+              <textarea class="form-control text-input" 
+                        name="user_text" 
+                        id="user_text" 
+                        rows="10"
+                        maxlength="50000"
+                        placeholder="Paste or type your text here... (Max 50,000 characters)">{{ user_text or '' }}</textarea>
+              
+              <div class="input-footer">
+                <div class="input-stats">
+                  {% if input_word_count %}
+                  <span class="stat-item">
+                    <i class="fas fa-file-word"></i> {{ input_word_count }} words
+                  </span>
+                  <span class="stat-item">
+                    <i class="fas fa-font"></i> {{ input_char_count }} characters
+                  </span>
+                  <span class="stat-item">
+                    <i class="fas fa-align-justify"></i> {{ input_sentence_count }} sentences
+                  </span>
+                  {% endif %}
+                </div>
+                <button type="submit" class="btn btn-primary btn-submit" id="submitBtn">
+                  <i class="fas fa-compress-alt"></i> Summarize
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6 mb-4">
+        <div class="card output-card">
+          <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+              <span><i class="fas fa-file-alt"></i> Summary</span>
+              {% if summarized_text %}
+              <div class="export-buttons">
+                <button class="btn btn-sm btn-export" id="exportTxt" data-toggle="tooltip" title="Export as TXT">
+                  <i class="fas fa-file-alt"></i> TXT
+                </button>
+                <button class="btn btn-sm btn-export" id="exportPdf" data-toggle="tooltip" title="Export as PDF">
+                  <i class="fas fa-file-pdf"></i> PDF
+                </button>
+                <button class="btn btn-sm btn-copy" id="copyBtn" data-toggle="tooltip" title="Copy to clipboard">
+                  <i class="fas fa-copy"></i> Copy
+                </button>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          <div class="card-body output-body">
+            {% if summarized_text %}
+              <div class="summary-output">{{ summarized_text }}</div>
+              <div class="output-stats">
+                <span class="stat-badge">
+                  <i class="fas fa-chart-line"></i> 
+                  {{ ((summary_word_count / input_word_count * 100) | round | int) }}% of original
+                </span>
+                <span class="stat-badge">
+                  <i class="fas fa-file-word"></i> {{ summary_word_count }} words
+                </span>
+                <span class="stat-badge">
+                  <i class="fas fa-align-justify"></i> {{ summary_sentence_count }} sentences
+                </span>
+              </div>
+            {% else %}
+              <div class="empty-state">
+                <i class="fas fa-magic"></i>
+                <p>Your AI-generated summary will appear here</p>
+                <small>Enter text and click "Summarize" to get started</small>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="history-section" id="historySection" style="display: none;">
+      <div class="history-header">
+        <h4><i class="fas fa-history"></i> Recent Summaries</h4>
+        <button class="btn btn-sm btn-danger" id="clearHistory">
+          <i class="fas fa-trash"></i> Clear All
+        </button>
+      </div>
+      <div id="historyList" class="history-list"></div>
+    </div>
+
+    <div class="features-section">
+      <div class="row text-center">
+        <div class="col-md-3 col-6 mb-3">
+          <div class="feature-item">
+            <i class="fas fa-bolt"></i>
+            <h6>Lightning Fast</h6>
+          </div>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+          <div class="feature-item">
+            <i class="fas fa-brain"></i>
+            <h6>AI-Powered</h6>
+          </div>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+          <div class="feature-item">
+            <i class="fas fa-shield-alt"></i>
+            <h6>Privacy First</h6>
+          </div>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+          <div class="feature-item">
+            <i class="fas fa-expand-arrows-alt"></i>
+            <h6>Flexible Formats</h6>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-container">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p class="mt-3">Generating your summary...</p>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <div class="container text-center">
+      <p class="mb-1">
+        <strong>AI Summarizer</strong> powered by Google Gemini
+      </p>
+      <small>&copy; 2025 All rights reserved</small>
+    </div>
+  </footer>
+
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
