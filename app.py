@@ -14,7 +14,7 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 MAX_INPUT_LENGTH = 50000  # Increased for file uploads
 
 # Configure upload settings
-UPLOAD_FOLDER = 'uploads'
+UPLOAD_FOLDER = "/tmp/uploads"
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'docx'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
