@@ -300,6 +300,7 @@ def export_txt():
 def export_pdf():
     """Export summary as PDF file."""
     summary_text = request.form.get('summary_text', '')
+    mode = request.form.get('mode', 'paragraph')
     
     if not summary_text:
         return jsonify({'error': 'No summary to export'}), 400
@@ -309,6 +310,24 @@ def export_pdf():
         from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
         from reportlab.lib.units import inch
+        from reportlab.pdfbase import pdfmetrics
+        from reportlab.pdfbase.ttfonts import TTFont
+
+        # Register Caveat font if mode is handwriting
+        font_name = 'Helvetica'
+        font_size = 12
+        leading = 14
+
+        if mode == 'handwriting':
+            try:
+                font_path = os.path.join(app.root_path, 'static', 'fonts', 'Caveat-Regular.ttf')
+                if os.path.exists(font_path):
+                    pdfmetrics.registerFont(TTFont('Caveat', font_path))
+                    font_name = 'Caveat'
+                    font_size = 18
+                    leading = 22
+            except Exception as e:
+                print(f"Failed to load font: {e}")
         
         # Create a BytesIO buffer
         buffer = BytesIO()
@@ -324,7 +343,16 @@ def export_pdf():
             parent=styles['Heading1'],
             fontSize=24,
             textColor='#4f46e5',
-            spaceAfter=30
+            spaceAfter=30,
+            fontName='Helvetica-Bold'
+        )
+
+        body_style = ParagraphStyle(
+            'CustomBody',
+            parent=styles['BodyText'],
+            fontName=font_name,
+            fontSize=font_size,
+            leading=leading
         )
         
         # Add title
@@ -334,7 +362,7 @@ def export_pdf():
         # Add summary text
         for paragraph in summary_text.split('\n'):
             if paragraph.strip():
-                story.append(Paragraph(paragraph, styles['BodyText']))
+                story.append(Paragraph(paragraph, body_style))
                 story.append(Spacer(1, 0.1 * inch))
         
         # Build PDF
