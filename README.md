@@ -128,7 +128,8 @@ Open a Pull Request
 This project is open source and available under the MIT License.
 
 👨‍💻 Author
-Your Name
+**Vishva Shukla**
+(Only developer and owner of this project)
 
 GitHub: @your-username
 LinkedIn: Your LinkedIn
@@ -144,4 +145,3 @@ Mobile View
 Show Image
 
 ⭐ Star this repo if you find it helpful!
-
