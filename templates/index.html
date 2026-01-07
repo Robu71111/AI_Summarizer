@@ -109,8 +109,8 @@
       <div class="col-lg-6 mb-4">
         <div class="card input-card">
           <div class="card-header">
-            <div class="d-flex justify-content-between align-items-center">
-              <span><i class="fas fa-edit"></i> Input Text</span>
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <span class="header-title"><i class="fas fa-edit"></i> Input Text</span>
               <span class="word-count" id="inputStats">0 words • 0 characters</span>
             </div>
           </div>
@@ -170,8 +170,8 @@
       <div class="col-lg-6 mb-4">
         <div class="card output-card">
           <div class="card-header">
-            <div class="d-flex justify-content-between align-items-center">
-              <span><i class="fas fa-file-alt"></i> Summary</span>
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <span class="header-title"><i class="fas fa-file-alt"></i> Summary</span>
               {% if summarized_text %}
               <div class="export-buttons">
                 <button class="btn btn-sm btn-export" id="exportTxt" data-toggle="tooltip" title="Export as TXT">
