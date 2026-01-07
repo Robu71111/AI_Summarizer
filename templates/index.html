@@ -106,7 +106,7 @@
     </div>
 
     <div class="row">
-      <div class="col-lg-6 mb-4">
+      <div class="col-12 mb-4">
         <div class="card input-card">
           <div class="card-header">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -206,26 +206,6 @@
         </div>
       </div>
 
-      <div class="col-lg-6 mb-4">
-        <div class="col-12">
-          <label class="control-label">
-            <i class="fas fa-language"></i> Output Language
-            <i class="fas fa-info-circle ml-1 text-muted" data-toggle="tooltip" title="Choose the language you want the summary in, by default it will be english"></i>
-          </label>
-          <select class="form-control text-input" name="language" id="languageSelect">
-            <option value="english" selected>English (Default)</option>
-            <option value="spanish">Spanish</option>
-            <option value="french">French</option>
-            <option value="german">German</option>
-            <option value="italian">Italian</option>
-            <option value="portuguese">Portuguese</option>
-            <option value="hindi">Hindi</option>
-            <option value="chinese">Chinese</option>
-            <option value="japanese">Japanese</option>
-          </select>
-        </div>
-      </div>
-
       <div class="row mt-3">
         <div class="card output-card">
           <div class="card-header">
@@ -233,6 +213,23 @@
               <span class="header-title"><i class="fas fa-file-alt"></i> Summary</span>
               {% if summarized_text %}
               <div class="export-buttons">
+                <div class="btn-group mr-2">
+                  <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-language"></i> Translate
+                  </button>
+                  <div class="dropdown-menu">
+                    <a class="dropdown-item translate-option" href="#" data-lang="english">English</a>
+                    <a class="dropdown-item translate-option" href="#" data-lang="spanish">Spanish</a>
+                    <a class="dropdown-item translate-option" href="#" data-lang="french">French</a>
+                    <a class="dropdown-item translate-option" href="#" data-lang="german">German</a>
+                    <a class="dropdown-item translate-option" href="#" data-lang="italian">Italian</a>
+                    <a class="dropdown-item translate-option" href="#" data-lang="portuguese">Portuguese</a>
+                    <a class="dropdown-item translate-option" href="#" data-lang="hindi">Hindi</a>
+                    <a class="dropdown-item translate-option" href="#" data-lang="chinese">Chinese</a>
+                    <a class="dropdown-item translate-option" href="#" data-lang="japanese">Japanese</a>
+                  </div>
+                </div>
+                <i class="fas fa-info-circle mr-3 text-muted" data-toggle="tooltip" title="Translate Summary into your desired language" style="align-self: center;"></i>
                 <button class="btn btn-sm btn-export" id="exportTxt" data-toggle="tooltip" title="Export as TXT">
                   <i class="fas fa-file-alt"></i> TXT
                 </button>
