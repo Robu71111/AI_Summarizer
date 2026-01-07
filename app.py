@@ -95,7 +95,11 @@ def build_prompt(user_text: str, length_choice: str, mode: str = 'paragraph', su
         language: Output language
     """
     # Language instruction
-    language_instruction = f"OUTPUT LANGUAGE: {language.upper()}. The summary MUST be written in {language.upper()}."
+    language_instruction = (
+        f"OUTPUT LANGUAGE: {language.upper()}. "
+        f"You must generate the summary in {language.upper()}. "
+        f"If the input text is in a different language, YOU MUST TRANSLATE IT and provide the summary in {language.upper()}."
+    )
 
     # Length instructions
     if length_choice == '1':  # short
