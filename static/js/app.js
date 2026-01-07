@@ -5,8 +5,15 @@ document.addEventListener('DOMContentLoaded', function() {
   const lengthRange = document.getElementById('lengthRange');
   const lengthInput = document.getElementById('lengthInput');
   const lengthOptions = document.querySelectorAll('.length-option');
-  const modeTabs = document.querySelectorAll('.mode-tab');
+
+  // Format tabs (Paragraph, Bullets, Key Points, Handwriting)
+  const formatTabs = document.querySelectorAll('.format-tab');
   const modeInput = document.getElementById('modeInput');
+
+  // Summary Mode tabs (Standard, Formal, Creative)
+  const summaryModeTabs = document.querySelectorAll('.summary-mode-tab');
+  const summaryModeInput = document.getElementById('summaryModeInput');
+
   const userTextArea = document.getElementById('user_text');
   const inputStats = document.getElementById('inputStats');
   const summarizeForm = document.getElementById('summarizeForm');
@@ -256,12 +263,23 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  modeTabs.forEach(tab => {
+  // Output Format Selection
+  formatTabs.forEach(tab => {
     tab.addEventListener('click', function(e) {
       e.preventDefault();
-      modeTabs.forEach(t => t.classList.remove('active'));
+      formatTabs.forEach(t => t.classList.remove('active'));
       this.classList.add('active');
       if (modeInput) modeInput.value = this.getAttribute('data-mode');
+    });
+  });
+
+  // Summary Mode Selection
+  summaryModeTabs.forEach(tab => {
+    tab.addEventListener('click', function(e) {
+      e.preventDefault();
+      summaryModeTabs.forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+      if (summaryModeInput) summaryModeInput.value = this.getAttribute('data-mode');
     });
   });
 
