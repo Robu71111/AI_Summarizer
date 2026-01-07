@@ -1,50 +1,65 @@
-# AI Text Summarizer
+# 🤖 AI Summarizer
 
-## Overview
-AI Text Summarizer is a powerful, user-friendly web application designed to transform lengthy documents into concise, meaningful summaries. Leveraging advanced AI models via the OpenRouter API, it supports multiple input formats including direct text entry, PDF, DOCX, and TXT files.
+A powerful, modern web application that transforms lengthy articles and documents into concise summaries. Built with Python (Flask) and powered by the **Google Gemini 2.0 Flash** AI model.
 
-## Features
-- **Multi-Format Support:** Upload .pdf, .docx, and .txt files or paste text directly.
-- **Customizable Summaries:** Choose from Short, Medium, or Long lengths.
-- **Tone Selection:** Standard, Formal, or Creative summary modes.
-- **Output Styles:** Paragraph, Bullet Points, Key Takeaways, or "Handwriting" style.
-- **Export Options:** Download summaries as PDF or TXT, or copy to clipboard.
-- **History Tracking:** Automatically saves recent summaries for quick access.
-- **Responsive Design:** A beautiful, classic themed interface that works on all devices.
+**🚀 [Live Demo](https://ai-summarizer-self.vercel.app)**
 
-## Tech Stack
-- **Backend:** Python (Flask)
-- **Frontend:** HTML5, CSS3, JavaScript (Bootstrap 4)
-- **AI Integration:** OpenRouter API
-- **File Processing:** PyPDF2 (PDF), python-docx (DOCX)
-- **PDF Generation:** ReportLab
+---
 
-## Installation
+## ✨ Key Features
 
-1. **Clone the repository:**
-   ```bash
-   git clone <repository-url>
-   cd ai-text-summarizer
-   ```
+* **High Character Limit:** Process documents up to **50,000 characters** (approx. 8,000 words).
+* **Multiple Formats:** Generate summaries as Paragraphs, Bullet Points, or Key Takeaways.
+* **File Support:** Upload PDF, DOCX, or TXT files directly.
+* **Smart History:** Locally saved recent summaries for quick reference.
+* **Dark Mode:** Modern, responsive UI with smooth theme switching.
+* **One-Click Export:** Download your results as `.txt` or `.pdf` files.
 
-2. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+## 🛠️ Tech Stack
 
-3. **Set up Environment Variables:**
-   Create a `.env` file in the root directory and add your OpenRouter API key:
-   ```
-   OPENROUTER_API_KEY=your_api_key_here
-   ```
+* **Backend:** Python (Flask)
+* **AI Engine:** Google Gemini 2.0 Flash
+* **Frontend:** HTML5, CSS3 (Glassmorphism), JavaScript (Vanilla)
+* **Deployment:** Vercel
 
-4. **Run the Application:**
-   ```bash
-   python3 app.py
-   ```
+## ⚙️ Local Setup
 
-5. **Access the App:**
-   Open your browser and navigate to `http://localhost:5000`.
+### 1. Prerequisites
+* Python 3.9+
+* API Key
 
-## Developer
-Developed by **Vishva Shukla**.
+### 2. Installation
+```bash
+# Clone the repository
+git clone [https://github.com/Robu71111/AI_Summarizer.git](https://github.com/Robu71111/AI_Summarizer.git)
+cd AI_Summarizer
+
+# Install dependencies
+pip install -r requirements.txt
+
+### 3. Configuration
+Create a .env file in the root directory:
+Code snippet
+
+GOOGLE_API_KEY=your_actual_api_key_here
+
+### 4. Run App
+Bash
+python app.py
+Visit http://localhost:5000 in your browser.
+
+🌐 Deployment
+This project is configured for Vercel.
+
+Push your code to GitHub (ensure .env is ignored).
+
+Connect your repo to Vercel.
+
+Add your api key to Environment Variables in the Vercel dashboard.
+
+📝 License
+This project is open-source under the MIT License.
+
+Author: Vishva Shukla
+
+Crafted with 💖
