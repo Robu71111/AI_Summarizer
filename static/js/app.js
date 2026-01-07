@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Export buttons
   const exportTxt = document.getElementById('exportTxt');
   const exportPdf = document.getElementById('exportPdf');
+  const exportDocx = document.getElementById('exportDocx');
   
   // History elements
   const historySection = document.getElementById('historySection');
@@ -327,7 +328,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   const exportActions = [
     { el: exportTxt, action: '/export/txt' },
-    { el: exportPdf, action: '/export/pdf' }
+    { el: exportPdf, action: '/export/pdf' },
+    { el: exportDocx, action: '/export/docx' }
   ];
 
   exportActions.forEach(({ el, action }) => {
@@ -342,11 +344,21 @@ document.addEventListener('DOMContentLoaded', function() {
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = action;
+
         const input = document.createElement('input');
         input.type = 'hidden';
         input.name = 'summary_text';
         input.value = output.textContent;
         form.appendChild(input);
+
+        // Pass current mode for formatting (Handwriting etc)
+        const modeVal = document.getElementById('modeInput').value;
+        const modeInput = document.createElement('input');
+        modeInput.type = 'hidden';
+        modeInput.name = 'mode';
+        modeInput.value = modeVal;
+        form.appendChild(modeInput);
+
         document.body.appendChild(form);
         form.submit();
         document.body.removeChild(form);
@@ -360,10 +372,34 @@ document.addEventListener('DOMContentLoaded', function() {
   if (copyBtn) {
     copyBtn.addEventListener('click', () => {
       const output = document.querySelector('.summary-output');
-      if (output) copyToClipboard(output.textContent);
+      if (output) {
+        // If handwriting mode is active, try to copy as rich text
+        if (output.classList.contains('handwriting-font')) {
+            copyRichText(output);
+        } else {
+            copyToClipboard(output.textContent);
+        }
+      }
     });
   }
   
+  async function copyRichText(element) {
+    try {
+        const html = `<div style="font-family: 'Caveat', cursive; font-size: 16pt; color: #2c3e50;">${element.innerHTML}</div>`;
+        const blob = new Blob([html], { type: 'text/html' });
+        const textBlob = new Blob([element.textContent], { type: 'text/plain' });
+        const data = [new ClipboardItem({
+            'text/html': blob,
+            'text/plain': textBlob
+        })];
+        await navigator.clipboard.write(data);
+        showCopySuccess();
+    } catch (err) {
+        console.error('Rich copy failed, falling back to plain text', err);
+        copyToClipboard(element.textContent);
+    }
+  }
+
   async function copyToClipboard(text) {
     try {
       await navigator.clipboard.writeText(text);

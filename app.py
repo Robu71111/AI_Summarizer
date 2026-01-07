@@ -309,7 +309,19 @@ def export_pdf():
         from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
         from reportlab.lib.units import inch
+        from reportlab.pdfbase import pdfmetrics
+        from reportlab.pdfbase.ttfonts import TTFont
+
+        mode = request.form.get('mode', 'paragraph')
         
+        # Register Caveat Font
+        try:
+            pdfmetrics.registerFont(TTFont('Caveat-Regular', 'static/fonts/Caveat-Regular.ttf'))
+            pdfmetrics.registerFont(TTFont('Caveat-Bold', 'static/fonts/Caveat-Bold.ttf'))
+            font_registered = True
+        except Exception:
+            font_registered = False
+
         # Create a BytesIO buffer
         buffer = BytesIO()
         
@@ -319,6 +331,8 @@ def export_pdf():
         
         # Define styles
         styles = getSampleStyleSheet()
+
+        # Title Style
         title_style = ParagraphStyle(
             'CustomTitle',
             parent=styles['Heading1'],
@@ -326,7 +340,20 @@ def export_pdf():
             textColor='#4f46e5',
             spaceAfter=30
         )
+
+        # Body Style
+        body_style = styles['BodyText']
         
+        # Use Handwriting font if mode is handwriting and font is available
+        if mode == 'handwriting' and font_registered:
+            body_style = ParagraphStyle(
+                'HandwritingBody',
+                parent=styles['BodyText'],
+                fontName='Caveat-Regular',
+                fontSize=16,
+                leading=20
+            )
+
         # Add title
         story.append(Paragraph("AI Generated Summary", title_style))
         story.append(Spacer(1, 0.2 * inch))
@@ -334,7 +361,12 @@ def export_pdf():
         # Add summary text
         for paragraph in summary_text.split('\n'):
             if paragraph.strip():
-                story.append(Paragraph(paragraph, styles['BodyText']))
+                # Replace newline characters with <br/> tags for ReportLab if needed,
+                # but split('\n') handles paragraphs.
+                # Just escape simple XML characters if not already done.
+                from xml.sax.saxutils import escape
+                safe_text = escape(paragraph)
+                story.append(Paragraph(safe_text, body_style))
                 story.append(Spacer(1, 0.1 * inch))
         
         # Build PDF
@@ -351,6 +383,55 @@ def export_pdf():
         return jsonify({'error': 'PDF export not available. Install reportlab: pip install reportlab'}), 500
     except Exception as e:
         return jsonify({'error': f'Failed to generate PDF: {str(e)}'}), 500
+
+@app.route('/export/docx', methods=['POST'])
+def export_docx():
+    """Export summary as DOCX file."""
+    summary_text = request.form.get('summary_text', '')
+    mode = request.form.get('mode', 'paragraph')
+
+    if not summary_text:
+        return jsonify({'error': 'No summary to export'}), 400
+
+    try:
+        from docx import Document
+        from docx.shared import Pt, RGBColor
+        from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+        doc = Document()
+
+        # Add Title
+        title = doc.add_heading('AI Generated Summary', 0)
+        title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+        # Add Text
+        for paragraph_text in summary_text.split('\n'):
+            if paragraph_text.strip():
+                p = doc.add_paragraph(paragraph_text)
+                run = p.runs[0]
+
+                # Apply Handwriting Style if requested
+                # Note: This only sets the font name. The user must have the font installed
+                # or Word will substitute it. We use "Caveat" as primary, "Brush Script MT" as fallback.
+                if mode == 'handwriting':
+                    run.font.name = 'Caveat'
+                    run.font.size = Pt(14)
+                else:
+                    run.font.size = Pt(11)
+
+        # Save to buffer
+        buffer = BytesIO()
+        doc.save(buffer)
+        buffer.seek(0)
+
+        return send_file(
+            buffer,
+            as_attachment=True,
+            download_name='summary.docx',
+            mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        )
+    except Exception as e:
+        return jsonify({'error': f'Failed to generate DOCX: {str(e)}'}), 500
 
 @app.route('/api/wordcount', methods=['POST'])
 def api_wordcount():
