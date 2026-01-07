@@ -120,29 +120,68 @@
               <input type="hidden" name="mode" id="modeInput" value="{{ selected_mode or 'paragraph' }}">
               <input type="hidden" name="summary_mode" id="summaryModeInput" value="{{ selected_summary_mode or 'standard' }}">
               
-              <div class="file-upload-section">
-                <label class="file-upload-label">
-                  <input type="file" name="file_upload" id="fileUpload" accept=".pdf,.docx,.txt" style="display: none;">
-                  <div class="file-upload-btn">
-                    <i class="fas fa-upload"></i> Upload File (PDF, DOCX, TXT)
+              <ul class="nav nav-tabs mb-3 input-tabs" id="inputTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link active" id="text-tab" data-toggle="tab" data-target="#text-panel" type="button" role="tab" aria-controls="text-panel" aria-selected="true">
+                    <i class="fas fa-font"></i> Text
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link" id="file-tab" data-toggle="tab" data-target="#file-panel" type="button" role="tab" aria-controls="file-panel" aria-selected="false">
+                    <i class="fas fa-file-upload"></i> File
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link" id="url-tab" data-toggle="tab" data-target="#url-panel" type="button" role="tab" aria-controls="url-panel" aria-selected="false">
+                    <i class="fas fa-link"></i> URL
+                  </button>
+                </li>
+              </ul>
+
+              <div class="tab-content" id="inputTabContent">
+                <!-- Text Input Panel -->
+                <div class="tab-pane fade show active" id="text-panel" role="tabpanel" aria-labelledby="text-tab">
+                  <textarea class="form-control text-input"
+                            name="user_text"
+                            id="user_text"
+                            rows="10"
+                            maxlength="50000"
+                            placeholder="Paste or type your text here... (Max 50,000 characters)">{{ user_text if not user_text_url else '' }}</textarea>
+                </div>
+
+                <!-- File Upload Panel -->
+                <div class="tab-pane fade" id="file-panel" role="tabpanel" aria-labelledby="file-tab">
+                  <div class="file-upload-section flex-column align-items-center justify-content-center p-5 text-center" style="border: 2px dashed var(--border-subtle); border-radius: var(--radius-md);">
+                    <label class="file-upload-label mb-3">
+                      <input type="file" name="file_upload" id="fileUpload" accept=".pdf,.docx,.txt" style="display: none;">
+                      <div class="file-upload-btn">
+                        <i class="fas fa-cloud-upload-alt fa-2x"></i> <span class="d-block mt-2">Click to Upload File</span>
+                      </div>
+                    </label>
+                    <small class="text-muted d-block">Supported formats: PDF, DOCX, TXT</small>
+                    <div id="fileNameDisplay" class="mt-3 font-weight-bold text-primary" style="display: none;">
+                      <span id="fileName"></span>
+                      <button type="button" id="clearFile" class="btn btn-sm btn-outline-danger ml-2">
+                        <i class="fas fa-times"></i>
+                      </button>
+                    </div>
                   </div>
-                </label>
-                <span id="fileName" class="file-name"></span>
-                <button type="button" id="clearFile" class="clear-file-btn" style="display: none;">
-                  <i class="fas fa-times"></i>
-                </button>
+                </div>
+
+                <!-- URL Input Panel -->
+                <div class="tab-pane fade" id="url-panel" role="tabpanel" aria-labelledby="url-tab">
+                  <div class="url-input-section p-4">
+                    <label for="url_input" class="control-label mb-2">Enter Article URL</label>
+                    <div class="input-group">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-globe"></i></span>
+                      </div>
+                      <input type="url" class="form-control text-input" name="url_input" id="url_input" placeholder="https://example.com/article">
+                    </div>
+                    <small class="text-muted mt-2 d-block">The AI will extract and summarize the main content from the webpage.</small>
+                  </div>
+                </div>
               </div>
-              
-              <div class="text-divider">
-                <span>OR</span>
-              </div>
-              
-              <textarea class="form-control text-input" 
-                        name="user_text" 
-                        id="user_text" 
-                        rows="10"
-                        maxlength="50000"
-                        placeholder="Paste or type your text here... (Max 50,000 characters)">{{ user_text or '' }}</textarea>
               
               <div class="input-footer">
                 <div class="input-stats">
@@ -168,6 +207,26 @@
       </div>
 
       <div class="col-lg-6 mb-4">
+        <div class="col-12">
+          <label class="control-label">
+            <i class="fas fa-language"></i> Output Language
+            <i class="fas fa-info-circle ml-1 text-muted" data-toggle="tooltip" title="Choose the language you want the summary in, by default it will be english"></i>
+          </label>
+          <select class="form-control text-input" name="language" id="languageSelect">
+            <option value="english" selected>English (Default)</option>
+            <option value="spanish">Spanish</option>
+            <option value="french">French</option>
+            <option value="german">German</option>
+            <option value="italian">Italian</option>
+            <option value="portuguese">Portuguese</option>
+            <option value="hindi">Hindi</option>
+            <option value="chinese">Chinese</option>
+            <option value="japanese">Japanese</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row mt-3">
         <div class="card output-card">
           <div class="card-header">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">

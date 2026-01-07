@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from io import BytesIO
 import PyPDF2
 import docx
+from bs4 import BeautifulSoup
 
 load_dotenv()
 app = Flask(__name__)
@@ -55,7 +56,34 @@ def extract_text_from_txt(file_stream):
     except Exception as e:
         return None
 
-def build_prompt(user_text: str, length_choice: str, mode: str = 'paragraph', summary_mode: str = 'standard') -> str:
+def extract_text_from_url(url):
+    """Extract main text content from a URL."""
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+
+        soup = BeautifulSoup(response.content, 'html.parser')
+
+        # Remove script and style elements
+        for script in soup(["script", "style", "nav", "footer", "header", "aside"]):
+            script.decompose()
+
+        # Get text
+        text = soup.get_text()
+
+        # Break into lines and remove leading/trailing space on each
+        lines = (line.strip() for line in text.splitlines())
+        # Break multi-headlines into a line each
+        chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+        # Drop blank lines
+        text = '\n'.join(chunk for chunk in chunks if chunk)
+
+        return text
+    except Exception as e:
+        return None
+
+def build_prompt(user_text: str, length_choice: str, mode: str = 'paragraph', summary_mode: str = 'standard', language: str = 'english') -> str:
     """
     Builds a prompt string guiding the model to produce summaries in different formats.
     
@@ -64,7 +92,11 @@ def build_prompt(user_text: str, length_choice: str, mode: str = 'paragraph', su
         length_choice: '1' (short), '2' (medium), '3' (long)
         mode: 'paragraph', 'bullets', 'takeaways', or 'handwriting'
         summary_mode: 'standard', 'formal', or 'creative'
+        language: Output language
     """
+    # Language instruction
+    language_instruction = f"Provide the summary in {language.upper()}."
+
     # Length instructions
     if length_choice == '1':  # short
         length_instructions = "Provide a BRIEF summary (2-3 sentences)."
@@ -104,7 +136,8 @@ def build_prompt(user_text: str, length_choice: str, mode: str = 'paragraph', su
     
     final_prompt = (
         f"{length_instructions} {format_instructions}\n"
-        f"{style_instructions}\n\n"
+        f"{style_instructions}\n"
+        f"{language_instruction}\n\n"
         "Important: Only include information explicitly stated in the text. "
         "Do not add facts, interpretations, or details not present in the original.\n"
         "If anything is unclear, omit it rather than fabricating information.\n\n"
@@ -200,10 +233,21 @@ def generate():
     length_choice = request.form.get('length', '2')
     mode = request.form.get('mode', 'paragraph')
     summary_mode = request.form.get('summary_mode', 'standard')
+    language = request.form.get('language', 'english')
+    url_input = request.form.get('url_input', '').strip()
     uploaded_file = request.files.get('file_upload')
     
+    user_text_url = False
+
+    # Handle URL input
+    if url_input:
+        user_text = extract_text_from_url(url_input)
+        if not user_text:
+            return render_template('index.html', error='Failed to fetch content from the provided URL.')
+        user_text_url = True
+
     # Handle file upload
-    if uploaded_file and uploaded_file.filename != '':
+    elif uploaded_file and uploaded_file.filename != '':
         if not allowed_file(uploaded_file.filename):
             return render_template(
                 'index.html',
@@ -229,7 +273,7 @@ def generate():
     
     # Validation
     if not user_text:
-        return render_template('index.html', error='Please enter some text or upload a file to summarize.')
+        return render_template('index.html', error='Please enter some text, upload a file, or provide a URL to summarize.')
     
     if len(user_text) > MAX_INPUT_LENGTH:
         return render_template(
@@ -243,7 +287,7 @@ def generate():
     input_char_count = len(user_text)
     
     # Build prompt and call API
-    prompt = build_prompt(user_text, length_choice, mode, summary_mode)
+    prompt = build_prompt(user_text, length_choice, mode, summary_mode, language)
     result = call_openrouter_api(prompt)
     
     if not result['success']:
@@ -271,6 +315,7 @@ def generate():
         input_sentence_count=input_sentence_count,
         input_char_count=input_char_count,
         user_text=user_text,
+        user_text_url=user_text_url,
         selected_length=length_choice,
         selected_mode=mode,
         selected_summary_mode=summary_mode
