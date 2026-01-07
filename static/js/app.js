@@ -26,6 +26,13 @@ document.addEventListener('DOMContentLoaded', function() {
   const fileUpload = document.getElementById('fileUpload');
   const fileName = document.getElementById('fileName');
   const clearFileBtn = document.getElementById('clearFile');
+  const fileNameDisplay = document.getElementById('fileNameDisplay');
+
+  // URL Input
+  const urlInput = document.getElementById('url_input');
+
+  // Initialize tooltips
+  $('[data-toggle="tooltip"]').tooltip();
   
   // Export buttons
   const exportTxt = document.getElementById('exportTxt');
@@ -76,13 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const file = e.target.files[0];
       if (file) {
         fileName.textContent = file.name;
-        if (clearFileBtn) clearFileBtn.style.display = 'flex';
-        
-        // Clear and disable text area when file is selected
-        userTextArea.value = '';
-        userTextArea.disabled = true;
-        userTextArea.style.opacity = '0.6';
-        userTextArea.placeholder = 'File selected. Text input disabled.';
+        if (fileNameDisplay) fileNameDisplay.style.display = 'block';
         updateWordCount();
       }
     });
@@ -92,10 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
     clearFileBtn.addEventListener('click', function() {
       fileUpload.value = '';
       fileName.textContent = '';
-      clearFileBtn.style.display = 'none';
-      userTextArea.disabled = false;
-      userTextArea.style.opacity = '1';
-      userTextArea.placeholder = 'Paste or type your text here... (Max 50,000 characters)';
+      if (fileNameDisplay) fileNameDisplay.style.display = 'none';
       updateWordCount();
     });
   }
@@ -312,12 +310,29 @@ document.addEventListener('DOMContentLoaded', function() {
   
   if (summarizeForm) {
     summarizeForm.addEventListener('submit', function(e) {
-      const text = userTextArea.value.trim();
-      const hasFile = fileUpload && fileUpload.files.length > 0;
+      // Determine active tab
+      const activeTabId = document.querySelector('.input-tabs .nav-link.active').id;
+
+      let hasContent = false;
+
+      if (activeTabId === 'text-tab') {
+          hasContent = userTextArea.value.trim().length > 0;
+          // Clear other inputs to avoid confusion
+          if (fileUpload) fileUpload.value = '';
+          if (urlInput) urlInput.value = '';
+      } else if (activeTabId === 'file-tab') {
+          hasContent = fileUpload && fileUpload.files.length > 0;
+          if (userTextArea) userTextArea.value = '';
+          if (urlInput) urlInput.value = '';
+      } else if (activeTabId === 'url-tab') {
+          hasContent = urlInput && urlInput.value.trim().length > 0;
+          if (userTextArea) userTextArea.value = '';
+          if (fileUpload) fileUpload.value = '';
+      }
       
-      if (!text && !hasFile) {
+      if (!hasContent) {
         e.preventDefault();
-        showNotification('Please provide text or a file', 'error');
+        showNotification('Please provide text, upload a file, or enter a URL', 'error');
         return;
       }
       
