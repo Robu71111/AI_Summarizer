@@ -14,10 +14,10 @@ class TestApp(unittest.TestCase):
     def test_build_prompt(self):
         prompt = build_prompt("Test content", "2", "paragraph", "standard", "english")
         self.assertIn("Test content", prompt)
-        self.assertIn("Provide the summary in ENGLISH.", prompt)
+        self.assertIn("OUTPUT LANGUAGE: ENGLISH", prompt)
 
         prompt_spanish = build_prompt("Test content", "2", "paragraph", "standard", "spanish")
-        self.assertIn("Provide the summary in SPANISH.", prompt_spanish)
+        self.assertIn("OUTPUT LANGUAGE: SPANISH", prompt_spanish)
 
 if __name__ == '__main__':
     unittest.main()

@@ -95,7 +95,7 @@ def build_prompt(user_text: str, length_choice: str, mode: str = 'paragraph', su
         language: Output language
     """
     # Language instruction
-    language_instruction = f"Provide the summary in {language.upper()}."
+    language_instruction = f"OUTPUT LANGUAGE: {language.upper()}. The summary MUST be written in {language.upper()}."
 
     # Length instructions
     if length_choice == '1':  # short
@@ -135,9 +135,9 @@ def build_prompt(user_text: str, length_choice: str, mode: str = 'paragraph', su
         style_instructions = "Use a STANDARD, neutral, and informative tone."
     
     final_prompt = (
+        f"You are an expert summarizer. {language_instruction}\n"
         f"{length_instructions} {format_instructions}\n"
         f"{style_instructions}\n"
-        f"{language_instruction}\n\n"
         "Important: Only include information explicitly stated in the text. "
         "Do not add facts, interpretations, or details not present in the original.\n"
         "If anything is unclear, omit it rather than fabricating information.\n\n"

@@ -210,12 +210,22 @@ body {
   color: var(--text-muted);
   font-weight: 600;
   transition: all 0.2s;
+  padding: 0.75rem 1.25rem;
+  flex: 1 1 auto;
+  text-align: center;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-width: 120px;
 }
 
 .mode-tab:hover {
   border-color: var(--primary-light);
   color: var(--text-main);
   background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-2px);
 }
 
 .mode-tab.active {
@@ -300,13 +310,30 @@ body {
   box-shadow: 0 0 15px rgba(139, 92, 246, 0.1);
 }
 
+.history-action-btn {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
 .history-action-btn:hover {
   color: var(--accent-cyan);
+  background: rgba(255,255,255,0.1);
   transform: scale(1.1);
+  border-color: var(--accent-cyan);
 }
 
 .history-action-btn.delete-btn:hover {
   color: var(--error);
+  border-color: var(--error);
 }
 
 /* Footer */
@@ -315,20 +342,44 @@ body {
   backdrop-filter: blur(10px);
   border-top: 1px solid var(--border-subtle);
   margin-top: auto;
-  padding: 1.5rem 0;
+  padding: 2rem 0;
   color: var(--text-muted);
+  position: relative;
+  z-index: 10;
 }
 
-.app-footer p, .app-footer small {
-  transition: color var(--duration) var(--ease);
+.app-footer .container {
+    transition: transform 0.3s ease;
+}
+
+.app-footer:hover .container {
+    transform: translateY(-2px);
+}
+
+.app-footer p {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    transition: color 0.3s ease;
+}
+
+.app-footer small {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: rgba(255,255,255,0.03);
+    border-radius: 20px;
+    border: 1px solid transparent;
+    transition: all 0.3s ease;
 }
 
 .app-footer:hover p {
-  color: var(--text-main);
+    color: var(--primary-blue);
+    text-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
 }
 
 .app-footer:hover small {
-  color: var(--primary-light);
+    background: rgba(99, 102, 241, 0.1);
+    border-color: var(--primary-blue);
+    color: var(--text-main);
 }
 
 /* Responsive */
