@@ -55,14 +55,15 @@ def extract_text_from_txt(file_stream):
     except Exception as e:
         return None
 
-def build_prompt(user_text: str, length_choice: str, mode: str = 'paragraph') -> str:
+def build_prompt(user_text: str, length_choice: str, mode: str = 'paragraph', summary_mode: str = 'standard') -> str:
     """
     Builds a prompt string guiding the model to produce summaries in different formats.
     
     Args:
         user_text: The text to summarize
         length_choice: '1' (short), '2' (medium), '3' (long)
-        mode: 'paragraph', 'bullets', or 'takeaways'
+        mode: 'paragraph', 'bullets', 'takeaways', or 'handwriting'
+        summary_mode: 'standard', 'formal', or 'creative'
     """
     # Length instructions
     if length_choice == '1':  # short
@@ -72,7 +73,7 @@ def build_prompt(user_text: str, length_choice: str, mode: str = 'paragraph') ->
     else:  # '2' => medium
         length_instructions = "Provide a MODERATE-LENGTH summary (one paragraph)."
     
-    # Mode instructions
+    # Mode (Output Format) instructions
     if mode == 'bullets':
         format_instructions = (
             "Format your response as bullet points (use • or -). "
@@ -83,11 +84,27 @@ def build_prompt(user_text: str, length_choice: str, mode: str = 'paragraph') ->
             "Provide KEY TAKEAWAYS numbered 1, 2, 3, etc. "
             "Focus on the most important insights and actionable points."
         )
-    else:  # paragraph
+    else:  # paragraph or handwriting
+        # 'handwriting' is treated as paragraph for text generation purposes
         format_instructions = "Write the summary in clear, flowing paragraph form."
+
+    # Summary Mode (Style) instructions
+    if summary_mode == 'formal':
+        style_instructions = (
+            "Use a PROFESSIONAL and FORMAL tone. Use sophisticated vocabulary and structured sentences. "
+            "Avoid slang or casual language."
+        )
+    elif summary_mode == 'creative':
+        style_instructions = (
+            "Use a CREATIVE and ENGAGING tone. You can use analogies or storytelling elements if appropriate "
+            "to make the summary interesting, while remaining accurate to the source."
+        )
+    else:  # standard
+        style_instructions = "Use a STANDARD, neutral, and informative tone."
     
     final_prompt = (
-        f"{length_instructions} {format_instructions}\n\n"
+        f"{length_instructions} {format_instructions}\n"
+        f"{style_instructions}\n\n"
         "Important: Only include information explicitly stated in the text. "
         "Do not add facts, interpretations, or details not present in the original.\n"
         "If anything is unclear, omit it rather than fabricating information.\n\n"
@@ -182,6 +199,7 @@ def generate():
     user_text = request.form.get('user_text', '').strip()
     length_choice = request.form.get('length', '2')
     mode = request.form.get('mode', 'paragraph')
+    summary_mode = request.form.get('summary_mode', 'standard')
     uploaded_file = request.files.get('file_upload')
     
     # Handle file upload
@@ -225,7 +243,7 @@ def generate():
     input_char_count = len(user_text)
     
     # Build prompt and call API
-    prompt = build_prompt(user_text, length_choice, mode)
+    prompt = build_prompt(user_text, length_choice, mode, summary_mode)
     result = call_openrouter_api(prompt)
     
     if not result['success']:
@@ -254,7 +272,8 @@ def generate():
         input_char_count=input_char_count,
         user_text=user_text,
         selected_length=length_choice,
-        selected_mode=mode
+        selected_mode=mode,
+        selected_summary_mode=summary_mode
     )
 
 @app.route('/export/txt', methods=['POST'])

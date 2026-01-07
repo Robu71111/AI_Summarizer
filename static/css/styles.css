@@ -924,6 +924,15 @@ html {
   color: var(--text-primary);
 }
 
+/* Handwriting Font */
+.handwriting-font {
+  font-family: 'Caveat', cursive;
+  font-size: 1.5rem !important; /* Larger size for better readability */
+  line-height: 1.4 !important;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
 /* Scrollbar Styling */
 ::-webkit-scrollbar {
   width: 12px;
