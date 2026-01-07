@@ -12,12 +12,8 @@ class TestApp(unittest.TestCase):
         self.assertIn(b'AI Summarizer', response.data)
 
     def test_build_prompt(self):
-        prompt = build_prompt("Test content", "2", "paragraph", "standard", "english")
+        prompt = build_prompt("Test content", "2", "paragraph", "standard")
         self.assertIn("Test content", prompt)
-        self.assertIn("OUTPUT LANGUAGE: ENGLISH", prompt)
-
-        prompt_spanish = build_prompt("Test content", "2", "paragraph", "standard", "spanish")
-        self.assertIn("OUTPUT LANGUAGE: SPANISH", prompt_spanish)
 
 if __name__ == '__main__':
     unittest.main()

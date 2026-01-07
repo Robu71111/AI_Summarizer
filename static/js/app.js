@@ -37,6 +37,9 @@ document.addEventListener('DOMContentLoaded', function() {
   // Export buttons
   const exportTxt = document.getElementById('exportTxt');
   const exportPdf = document.getElementById('exportPdf');
+
+  // Translation elements
+  const translateOptions = document.querySelectorAll('.translate-option');
   
   // History elements
   const historySection = document.getElementById('historySection');
@@ -304,6 +307,68 @@ document.addEventListener('DOMContentLoaded', function() {
 
   if (userTextArea) {
     userTextArea.addEventListener('input', updateWordCount);
+  }
+
+  // ==================== Translation Handling ====================
+
+  if (translateOptions) {
+    translateOptions.forEach(option => {
+      option.addEventListener('click', async function(e) {
+        e.preventDefault();
+        const targetLang = this.getAttribute('data-lang');
+        const outputElement = document.querySelector('.summary-output');
+
+        if (!outputElement) return;
+
+        // Get original text from data attribute if exists, otherwise use current text and save it
+        let sourceText = outputElement.getAttribute('data-original-text');
+
+        if (!sourceText) {
+          const currentText = outputElement.textContent.trim();
+          if (!currentText || outputElement.querySelector('.empty-state')) {
+            showNotification('Generate a summary first!', 'error');
+            return;
+          }
+          sourceText = currentText;
+          outputElement.setAttribute('data-original-text', sourceText);
+        }
+
+        // Show loading state
+        const originalContent = outputElement.innerHTML;
+        outputElement.innerHTML = `
+          <div class="text-center p-4">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 text-muted">Translating to ${targetLang}...</p>
+          </div>
+        `;
+
+        try {
+          const response = await fetch('/translate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              text: sourceText,
+              target_language: targetLang
+            })
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            outputElement.innerHTML = result.text.replace(/\n/g, '<br>'); // Simple formatting preservation
+            showNotification(`Translated to ${targetLang}`, 'success');
+          } else {
+            throw new Error(result.error || 'Translation failed');
+          }
+        } catch (error) {
+          console.error('Translation error:', error);
+          outputElement.innerHTML = originalContent;
+          showNotification('Translation failed. Please try again.', 'error');
+        }
+      });
+    });
   }
 
   // ==================== Export & Form Submission ====================

@@ -83,7 +83,7 @@ def extract_text_from_url(url):
     except Exception as e:
         return None
 
-def build_prompt(user_text: str, length_choice: str, mode: str = 'paragraph', summary_mode: str = 'standard', language: str = 'english') -> str:
+def build_prompt(user_text: str, length_choice: str, mode: str = 'paragraph', summary_mode: str = 'standard') -> str:
     """
     Builds a prompt string guiding the model to produce summaries in different formats.
     
@@ -92,15 +92,7 @@ def build_prompt(user_text: str, length_choice: str, mode: str = 'paragraph', su
         length_choice: '1' (short), '2' (medium), '3' (long)
         mode: 'paragraph', 'bullets', 'takeaways', or 'handwriting'
         summary_mode: 'standard', 'formal', or 'creative'
-        language: Output language
     """
-    # Language instruction
-    language_instruction = (
-        f"OUTPUT LANGUAGE: {language.upper()}. "
-        f"You must generate the summary in {language.upper()}. "
-        f"If the input text is in a different language, YOU MUST TRANSLATE IT and provide the summary in {language.upper()}."
-    )
-
     # Length instructions
     if length_choice == '1':  # short
         length_instructions = "Provide a BRIEF summary (2-3 sentences)."
@@ -139,7 +131,7 @@ def build_prompt(user_text: str, length_choice: str, mode: str = 'paragraph', su
         style_instructions = "Use a STANDARD, neutral, and informative tone."
     
     final_prompt = (
-        f"You are an expert summarizer. {language_instruction}\n"
+        f"You are an expert summarizer.\n"
         f"{length_instructions} {format_instructions}\n"
         f"{style_instructions}\n"
         "Important: Only include information explicitly stated in the text. "
@@ -237,7 +229,6 @@ def generate():
     length_choice = request.form.get('length', '2')
     mode = request.form.get('mode', 'paragraph')
     summary_mode = request.form.get('summary_mode', 'standard')
-    language = request.form.get('language', 'english')
     url_input = request.form.get('url_input', '').strip()
     uploaded_file = request.files.get('file_upload')
     
@@ -291,7 +282,7 @@ def generate():
     input_char_count = len(user_text)
     
     # Build prompt and call API
-    prompt = build_prompt(user_text, length_choice, mode, summary_mode, language)
+    prompt = build_prompt(user_text, length_choice, mode, summary_mode)
     result = call_openrouter_api(prompt)
     
     if not result['success']:
@@ -441,3 +432,22 @@ def api_wordcount():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
+@app.route('/translate', methods=['POST'])
+def translate():
+    """Translate text to target language."""
+    data = request.json
+    text = data.get('text', '')
+    target_language = data.get('target_language', 'english')
+
+    if not text:
+        return jsonify({'success': False, 'error': 'No text provided'})
+
+    prompt = (
+        f"Translate the following text into {target_language}. "
+        "Maintain the original formatting and tone. "
+        "Do not add any introductory or concluding remarks, just provide the translation.\n\n"
+        f"Text:\n{text}"
+    )
+
+    result = call_openrouter_api(prompt)
+    return jsonify(result)
