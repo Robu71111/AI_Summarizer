@@ -342,11 +342,23 @@ document.addEventListener('DOMContentLoaded', function() {
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = action;
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'summary_text';
-        input.value = output.textContent;
-        form.appendChild(input);
+
+        const textInput = document.createElement('input');
+        textInput.type = 'hidden';
+        textInput.name = 'summary_text';
+        textInput.value = output.textContent;
+        form.appendChild(textInput);
+
+        // Pass mode if handwriting to include font in PDF
+        if (action.includes('pdf')) {
+            const modeInput = document.createElement('input');
+            modeInput.type = 'hidden';
+            modeInput.name = 'mode';
+            const isHandwriting = output.classList.contains('handwriting-font');
+            modeInput.value = isHandwriting ? 'handwriting' : 'paragraph';
+            form.appendChild(modeInput);
+        }
+
         document.body.appendChild(form);
         form.submit();
         document.body.removeChild(form);
@@ -360,10 +372,34 @@ document.addEventListener('DOMContentLoaded', function() {
   if (copyBtn) {
     copyBtn.addEventListener('click', () => {
       const output = document.querySelector('.summary-output');
-      if (output) copyToClipboard(output.textContent);
+      if (output) {
+        if (output.classList.contains('handwriting-font')) {
+            // Attempt to copy HTML with font style for rich text editors
+            const htmlContent = `<div style="font-family: 'Caveat', cursive; font-size: 24px;">${output.textContent.replace(/\n/g, '<br>')}</div>`;
+            copyRichText(htmlContent, output.textContent);
+        } else {
+            copyToClipboard(output.textContent);
+        }
+      }
     });
   }
   
+  async function copyRichText(html, text) {
+      try {
+          const blobHtml = new Blob([html], { type: 'text/html' });
+          const blobText = new Blob([text], { type: 'text/plain' });
+          const data = [new ClipboardItem({
+              'text/html': blobHtml,
+              'text/plain': blobText
+          })];
+          await navigator.clipboard.write(data);
+          showCopySuccess();
+      } catch (err) {
+          console.error('Rich copy failed, falling back to text', err);
+          copyToClipboard(text);
+      }
+  }
+
   async function copyToClipboard(text) {
     try {
       await navigator.clipboard.writeText(text);
