@@ -1,7 +1,12 @@
 // app.js - Professional AI Summarizer Logic
+// Enhanced Version with Full Functionality
 
 document.addEventListener('DOMContentLoaded', function() {
-  // --- Elements ---
+  console.log('🚀 AI Summarizer: Initializing...');
+  
+  // =====================================
+  // DOM ELEMENT REFERENCES
+  // =====================================
   const lengthRange = document.getElementById('lengthRange');
   const lengthInput = document.getElementById('lengthInput');
   const lengthOptions = document.querySelectorAll('.length-option');
@@ -26,40 +31,54 @@ document.addEventListener('DOMContentLoaded', function() {
   const clearHistoryBtn = document.getElementById('clearHistory');
   const summaryOutputElement = document.querySelector('.summary-output');
 
-  // --- 1. Entry Animations & UI Refinement ---
-  
-  // Fade in the summary output if it contains text (on page load)
-  if (summaryOutputElement && summaryOutputElement.textContent.trim().length > 10) {
-    summaryOutputElement.style.opacity = '0';
-    summaryOutputElement.style.transform = 'translateY(10px)';
-    summaryOutputElement.style.transition = 'all 0.6s ease-out';
-    
-    requestAnimationFrame(() => {
-      summaryOutputElement.style.opacity = '1';
-      summaryOutputElement.style.transform = 'translateY(0)';
-    });
+  // =====================================
+  // ENTRY ANIMATIONS
+  // =====================================
+  function initEntryAnimations() {
+    // Fade in summary output if present
+    if (summaryOutputElement && summaryOutputElement.textContent.trim().length > 10) {
+      summaryOutputElement.style.opacity = '0';
+      summaryOutputElement.style.transform = 'translateY(10px)';
+      summaryOutputElement.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+      
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          summaryOutputElement.style.opacity = '1';
+          summaryOutputElement.style.transform = 'translateY(0)';
+        }, 100);
+      });
+    }
   }
 
-  // --- 2. Dark/Light Mode Toggle ---
-  const savedTheme = localStorage.getItem('theme');
-  const initialTheme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-  document.documentElement.setAttribute('data-theme', initialTheme);
-  updateThemeIcon(initialTheme);
+  // =====================================
+  // THEME MANAGEMENT
+  // =====================================
+  function initTheme() {
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
+    
+    document.documentElement.setAttribute('data-theme', initialTheme);
+    updateThemeIcon(initialTheme);
 
-  if (themeToggle) {
-    themeToggle.addEventListener('click', function() {
-      const currentTheme = document.documentElement.getAttribute('data-theme');
-      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-      
-      themeToggle.style.transform = 'scale(0.8) rotate(180deg)';
-      
-      setTimeout(() => {
-        document.documentElement.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
-        updateThemeIcon(newTheme);
-        themeToggle.style.transform = '';
-      }, 150);
-    });
+    if (themeToggle) {
+      themeToggle.addEventListener('click', toggleTheme);
+    }
+  }
+
+  function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    
+    // Animate toggle button
+    themeToggle.style.transform = 'scale(0.85) rotate(180deg)';
+    
+    setTimeout(() => {
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      updateThemeIcon(newTheme);
+      themeToggle.style.transform = '';
+    }, 150);
   }
 
   function updateThemeIcon(theme) {
@@ -68,82 +87,134 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // --- 3. File & Word Count Logic ---
-  if (fileUpload) {
-    fileUpload.addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (file) {
-        fileName.textContent = file.name;
-        if (fileNameDisplay) fileNameDisplay.style.display = 'block';
-        updateWordCount();
-      }
-    });
-  }
-  
-  if (clearFileBtn) {
-    clearFileBtn.addEventListener('click', function() {
-      fileUpload.value = '';
-      fileName.textContent = '';
-      if (fileNameDisplay) fileNameDisplay.style.display = 'none';
-      updateWordCount();
-    });
+  // =====================================
+  // FILE UPLOAD HANDLING
+  // =====================================
+  function initFileUpload() {
+    if (fileUpload) {
+      fileUpload.addEventListener('change', handleFileChange);
+    }
+    
+    if (clearFileBtn) {
+      clearFileBtn.addEventListener('click', handleClearFile);
+    }
   }
 
+  function handleFileChange(e) {
+    const file = e.target.files[0];
+    if (file) {
+      if (fileName) fileName.textContent = file.name;
+      if (fileNameDisplay) {
+        fileNameDisplay.style.display = 'flex';
+        fileNameDisplay.classList.add('show');
+      }
+      updateWordCount();
+    }
+  }
+
+  function handleClearFile() {
+    if (fileUpload) fileUpload.value = '';
+    if (fileName) fileName.textContent = '';
+    if (fileNameDisplay) {
+      fileNameDisplay.style.display = 'none';
+      fileNameDisplay.classList.remove('show');
+    }
+    updateWordCount();
+  }
+
+  // =====================================
+  // WORD COUNT & STATISTICS
+  // =====================================
   function getWordCount(text) {
-    return text.trim().length > 0 ? text.trim().split(/\s+/).length : 0;
+    if (!text || text.trim().length === 0) return 0;
+    return text.trim().split(/\s+/).length;
   }
 
   function updateWordCount() {
     if (!userTextArea || !inputStats) return;
+    
     const text = userTextArea.value.trim();
     const words = getWordCount(text);
     const chars = text.length;
+    
     inputStats.textContent = `${words} words • ${chars} characters`;
-    inputStats.style.color = chars > 48000 ? '#ef4444' : '';
+    
+    // Warn if text is too long (48000+ chars)
+    if (chars > 48000) {
+      inputStats.style.color = 'var(--danger)';
+      inputStats.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${words} words • ${chars} characters (too long)`;
+    } else if (chars > 40000) {
+      inputStats.style.color = 'var(--warning)';
+    } else {
+      inputStats.style.color = '';
+    }
   }
 
-  if (userTextArea) userTextArea.addEventListener('input', updateWordCount);
-
-  // --- 4. History Management ---
-  loadHistory();
-
-  // Save new results to history
-  if (summaryOutputElement && summaryOutputElement.textContent.trim().length > 50) {
-    const isNewResult = !summaryOutputElement.hasAttribute('data-from-history');
-    if (isNewResult) {
-      const inputWordCount = getWordCount(userTextArea.value);
-      const summaryText = summaryOutputElement.textContent.trim();
-      const summaryWordCount = getWordCount(summaryText);
-      
-      saveToHistory({
-        summary: summaryText,
-        inputWords: inputWordCount || (summaryWordCount * 3),
-        summaryWords: summaryWordCount,
-        timestamp: new Date().toISOString()
+  // =====================================
+  // HISTORY MANAGEMENT
+  // =====================================
+  function initHistory() {
+    loadHistory();
+    
+    // Save new results to history (on page load)
+    if (summaryOutputElement && summaryOutputElement.textContent.trim().length > 50) {
+      const isNewResult = !summaryOutputElement.hasAttribute('data-from-history');
+      if (isNewResult) {
+        const inputWordCount = userTextArea ? getWordCount(userTextArea.value) : 0;
+        const summaryText = summaryOutputElement.textContent.trim();
+        const summaryWordCount = getWordCount(summaryText);
+        
+        saveToHistory({
+          summary: summaryText,
+          inputWords: inputWordCount || (summaryWordCount * 3),
+          summaryWords: summaryWordCount,
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
+    
+    // Clear history button
+    if (clearHistoryBtn) {
+      clearHistoryBtn.addEventListener('click', () => {
+        if (confirm('Clear all history? This cannot be undone.')) {
+          localStorage.removeItem('summaryHistory');
+          loadHistory();
+          showNotification('History cleared', 'info');
+        }
       });
     }
   }
 
   function saveToHistory(item) {
     let history = JSON.parse(localStorage.getItem('summaryHistory') || '[]');
-    const isDuplicate = history.some(h => h.summary.substring(0, 100) === item.summary.substring(0, 100));
+    
+    // Check for duplicates
+    const isDuplicate = history.some(h => 
+      h.summary.substring(0, 100) === item.summary.substring(0, 100)
+    );
+    
     if (isDuplicate) return;
 
     history.unshift(item);
     if (history.length > 10) history = history.slice(0, 10);
+    
     localStorage.setItem('summaryHistory', JSON.stringify(history));
     loadHistory();
   }
 
   function loadHistory() {
     if (!historySection || !historyList) return;
+    
     const history = JSON.parse(localStorage.getItem('summaryHistory') || '[]');
+    
     if (history.length === 0) {
       historySection.style.display = 'none';
       return;
     }
+    
     historySection.style.display = 'block';
     historyList.innerHTML = '';
+    
     history.forEach((item, index) => {
       historyList.appendChild(createHistoryItem(item, index));
     });
@@ -151,134 +222,262 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function createHistoryItem(item, index) {
     const div = document.createElement('div');
-    div.className = 'history-item card p-3 mb-3'; // Using card class for consistent UI
+    div.className = 'history-item card p-3 mb-3';
+    
     const date = new Date(item.timestamp);
-    const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    const formattedDate = date.toLocaleDateString() + ' ' + 
+      date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+    
+    const reductionPercent = Math.round((item.summaryWords / item.inputWords) * 100);
     
     div.innerHTML = `
       <div class="d-flex justify-content-between align-items-center mb-2">
-        <small class="text-muted font-weight-bold">${formattedDate}</small>
+        <small class="text-muted font-weight-bold">
+          <i class="fas fa-clock"></i> ${formattedDate}
+        </small>
         <div class="history-item-actions">
-          <button class="btn btn-sm btn-link use-btn p-1" title="Restore"><i class="fas fa-redo text-primary"></i></button>
-          <button class="btn btn-sm btn-link copy-btn p-1" title="Copy"><i class="fas fa-copy text-secondary"></i></button>
-          <button class="btn btn-sm btn-link delete-btn p-1" title="Delete"><i class="fas fa-trash text-danger"></i></button>
+          <button class="btn btn-sm btn-link use-btn p-1" title="Restore this summary">
+            <i class="fas fa-redo text-primary"></i>
+          </button>
+          <button class="btn btn-sm btn-link copy-btn p-1" title="Copy to clipboard">
+            <i class="fas fa-copy text-secondary"></i>
+          </button>
+          <button class="btn btn-sm btn-link delete-btn p-1" title="Delete from history">
+            <i class="fas fa-trash text-danger"></i>
+          </button>
         </div>
       </div>
-      <div class="history-item-preview text-muted small text-truncate mb-2" style="max-width: 100%">${item.summary}</div>
+      <div class="history-item-preview text-muted small mb-2">${escapeHtml(item.summary)}</div>
       <div class="d-flex gap-3">
-        <span class="badge badge-light" style="font-size: 0.7rem;">${item.summaryWords} words</span>
-        <span class="badge badge-light" style="font-size: 0.7rem;">${Math.round((item.summaryWords / item.inputWords) * 100)}% reduced</span>
+        <span class="badge badge-light">
+          <i class="fas fa-file-alt"></i> ${item.summaryWords} words
+        </span>
+        <span class="badge badge-success">
+          <i class="fas fa-compress-alt"></i> ${reductionPercent}% reduced
+        </span>
       </div>
     `;
 
+    // Event listeners for history item actions
     div.querySelector('.use-btn').addEventListener('click', () => {
-      summaryOutputElement.textContent = item.summary;
-      summaryOutputElement.setAttribute('data-from-history', 'true');
-      window.scrollTo({top: summaryOutputElement.offsetTop - 150, behavior: 'smooth'});
-      showNotification('Summary restored!', 'success');
+      if (summaryOutputElement) {
+        summaryOutputElement.textContent = item.summary;
+        summaryOutputElement.setAttribute('data-from-history', 'true');
+        window.scrollTo({
+          top: summaryOutputElement.offsetTop - 150,
+          behavior: 'smooth'
+        });
+        showNotification('Summary restored!', 'success');
+      }
     });
 
-    div.querySelector('.copy-btn').addEventListener('click', () => copyToClipboard(item.summary));
+    div.querySelector('.copy-btn').addEventListener('click', () => {
+      copyToClipboard(item.summary);
+    });
+
     div.querySelector('.delete-btn').addEventListener('click', () => {
       let history = JSON.parse(localStorage.getItem('summaryHistory') || '[]');
       history.splice(index, 1);
       localStorage.setItem('summaryHistory', JSON.stringify(history));
       loadHistory();
-      showNotification('Deleted', 'info');
+      showNotification('Deleted from history', 'info');
     });
 
     return div;
   }
 
-  // --- 5. Tabs & Sliders ---
+  // =====================================
+  // TABS & CONTROLS
+  // =====================================
+  function initControls() {
+    // Length slider
+    if (lengthRange && lengthInput) {
+      lengthRange.addEventListener('input', (e) => {
+        lengthInput.value = e.target.value;
+        updateLengthUI(e.target.value);
+      });
+    }
+
+    // Length option buttons
+    lengthOptions.forEach(option => {
+      option.addEventListener('click', function() {
+        const value = this.getAttribute('data-value');
+        if (lengthRange) lengthRange.value = value;
+        if (lengthInput) lengthInput.value = value;
+        updateLengthUI(value);
+      });
+    });
+
+    // Format tabs
+    formatTabs.forEach(tab => {
+      tab.addEventListener('click', function() {
+        formatTabs.forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        if (modeInput) {
+          modeInput.value = this.getAttribute('data-mode');
+        }
+      });
+    });
+
+    // Summary mode tabs
+    summaryModeTabs.forEach(tab => {
+      tab.addEventListener('click', function() {
+        summaryModeTabs.forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        if (summaryModeInput) {
+          summaryModeInput.value = this.getAttribute('data-mode');
+        }
+      });
+    });
+  }
+
   function updateLengthUI(value) {
-    lengthOptions.forEach(opt => opt.classList.toggle('active', opt.getAttribute('data-value') === value));
-  }
-
-  if (lengthRange) {
-    lengthRange.addEventListener('input', (e) => {
-      lengthInput.value = e.target.value;
-      updateLengthUI(e.target.value);
+    lengthOptions.forEach(opt => {
+      const optValue = opt.getAttribute('data-value');
+      opt.classList.toggle('active', optValue === value);
     });
   }
 
-  formatTabs.forEach(tab => {
-    tab.addEventListener('click', function() {
-      formatTabs.forEach(t => t.classList.remove('active'));
-      this.classList.add('active');
-      if (modeInput) modeInput.value = this.getAttribute('data-mode');
-    });
-  });
-
-  summaryModeTabs.forEach(tab => {
-    tab.addEventListener('click', function() {
-      summaryModeTabs.forEach(t => t.classList.remove('active'));
-      this.classList.add('active');
-      if (summaryModeInput) summaryModeInput.value = this.getAttribute('data-mode');
-    });
-  });
-
-  // --- 6. Form Submission & Exports ---
-  if (summarizeForm) {
-    summarizeForm.addEventListener('submit', function(e) {
-      const activeTab = document.querySelector('.input-tabs .nav-link.active');
-      const activeTabId = activeTab ? activeTab.id : 'text-tab';
-      let hasContent = false;
-
-      if (activeTabId === 'text-tab') hasContent = userTextArea.value.trim().length > 0;
-      else if (activeTabId === 'file-tab') hasContent = fileUpload && fileUpload.files.length > 0;
-      else if (activeTabId === 'url-tab') hasContent = urlInput && urlInput.value.trim().length > 0;
-      
-      if (!hasContent) {
-        e.preventDefault();
-        showNotification('Input required!', 'error');
-        return;
-      }
-      if (loadingOverlay) loadingOverlay.classList.add('active');
-    });
+  // =====================================
+  // FORM SUBMISSION
+  // =====================================
+  function initFormSubmit() {
+    if (summarizeForm) {
+      summarizeForm.addEventListener('submit', handleFormSubmit);
+    }
   }
 
-  // --- 7. Clipboard & Notifications ---
+  function handleFormSubmit(e) {
+    const activeTab = document.querySelector('.input-tabs .nav-link.active');
+    const activeTabId = activeTab ? activeTab.id : 'text-tab';
+    let hasContent = false;
+
+    // Check which tab is active and validate content
+    if (activeTabId === 'text-tab') {
+      hasContent = userTextArea && userTextArea.value.trim().length > 0;
+    } else if (activeTabId === 'file-tab') {
+      hasContent = fileUpload && fileUpload.files.length > 0;
+    } else if (activeTabId === 'url-tab') {
+      hasContent = urlInput && urlInput.value.trim().length > 0;
+    }
+    
+    if (!hasContent) {
+      e.preventDefault();
+      showNotification('Please provide some input to summarize!', 'error');
+      return;
+    }
+    
+    // Show loading overlay
+    if (loadingOverlay) {
+      loadingOverlay.classList.add('active');
+      loadingOverlay.innerHTML = `
+        <div class="loading-spinner"></div>
+        <div class="loading-text">
+          <i class="fas fa-magic"></i> Summarizing your content...
+        </div>
+      `;
+    }
+  }
+
+  // =====================================
+  // CLIPBOARD & NOTIFICATIONS
+  // =====================================
   async function copyToClipboard(text) {
     try {
       await navigator.clipboard.writeText(text);
       showNotification('Copied to clipboard!', 'success');
     } catch (err) {
-      showNotification('Copy failed', 'error');
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        showNotification('Copied to clipboard!', 'success');
+      } catch (err2) {
+        showNotification('Copy failed - please try manually', 'error');
+      }
+      document.body.removeChild(textArea);
     }
   }
 
-  if (copyBtn) copyBtn.addEventListener('click', () => {
-    if (summaryOutputElement) copyToClipboard(summaryOutputElement.textContent);
-  });
-
   function showNotification(message, type = 'success') {
+    // Remove any existing notification
     const existing = document.querySelector('.notification-toast');
     if (existing) existing.remove();
 
     const toast = document.createElement('div');
     toast.className = `notification-toast alert-${type}`;
-    toast.style.cssText = `
-      position: fixed; bottom: 2rem; right: 2rem; z-index: 9999;
-      padding: 1rem 1.5rem; border-radius: var(--radius-md);
-      background: var(--bg-card); border: 1px solid var(--border-subtle);
-      box-shadow: var(--shadow-lg); color: var(--text-main);
-      animation: slideIn 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    
+    let icon = 'fa-check-circle';
+    if (type === 'error') icon = 'fa-exclamation-circle';
+    if (type === 'info') icon = 'fa-info-circle';
+    if (type === 'warning') icon = 'fa-exclamation-triangle';
+    
+    toast.innerHTML = `
+      <i class="fas ${icon}"></i>
+      <span>${message}</span>
     `;
-    toast.innerHTML = `<i class="fas fa-info-circle mr-2" style="color:var(--primary)"></i> ${message}`;
+    
     document.body.appendChild(toast);
+    
     setTimeout(() => {
       toast.style.opacity = '0';
       toast.style.transform = 'translateY(20px)';
-      toast.style.transition = 'all 0.4s';
+      toast.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
       setTimeout(() => toast.remove(), 400);
     }, 3000);
   }
 
-  // Inject animation keyframes
-  const sheet = document.createElement('style');
-  sheet.innerHTML = `@keyframes slideIn { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`;
-  document.head.appendChild(sheet);
+  // =====================================
+  // COPY BUTTON
+  // =====================================
+  function initCopyButton() {
+    if (copyBtn && summaryOutputElement) {
+      copyBtn.addEventListener('click', () => {
+        const text = summaryOutputElement.textContent.trim();
+        if (text.length > 0) {
+          copyToClipboard(text);
+        } else {
+          showNotification('Nothing to copy!', 'warning');
+        }
+      });
+    }
+  }
 
-  console.log('🚀 AI Summarizer: UI Enhanced');
+  // =====================================
+  // UTILITY FUNCTIONS
+  // =====================================
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // =====================================
+  // INITIALIZE ALL FEATURES
+  // =====================================
+  function init() {
+    initTheme();
+    initEntryAnimations();
+    initFileUpload();
+    initControls();
+    initFormSubmit();
+    initCopyButton();
+    initHistory();
+    
+    // Initialize word count
+    if (userTextArea) {
+      userTextArea.addEventListener('input', updateWordCount);
+      updateWordCount();
+    }
+    
+    console.log('✅ AI Summarizer: Ready!');
+  }
+
+  // Start the app
+  init();
 });
