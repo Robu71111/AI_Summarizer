@@ -1,19 +1,14 @@
-// app.js - Main application JavaScript with all new features
+// app.js - Professional AI Summarizer Logic
 
 document.addEventListener('DOMContentLoaded', function() {
-  // Elements
+  // --- Elements ---
   const lengthRange = document.getElementById('lengthRange');
   const lengthInput = document.getElementById('lengthInput');
   const lengthOptions = document.querySelectorAll('.length-option');
-
-  // Format tabs (Paragraph, Bullets, Key Points, Handwriting)
   const formatTabs = document.querySelectorAll('.format-tab');
   const modeInput = document.getElementById('modeInput');
-
-  // Summary Mode tabs (Standard, Formal, Creative)
   const summaryModeTabs = document.querySelectorAll('.summary-mode-tab');
   const summaryModeInput = document.getElementById('summaryModeInput');
-
   const userTextArea = document.getElementById('user_text');
   const inputStats = document.getElementById('inputStats');
   const summarizeForm = document.getElementById('summarizeForm');
@@ -21,38 +16,33 @@ document.addEventListener('DOMContentLoaded', function() {
   const copyBtn = document.getElementById('copyBtn');
   const themeToggle = document.getElementById('themeToggle');
   const themeIcon = document.getElementById('themeIcon');
-  
-  // File upload elements
   const fileUpload = document.getElementById('fileUpload');
   const fileName = document.getElementById('fileName');
   const clearFileBtn = document.getElementById('clearFile');
   const fileNameDisplay = document.getElementById('fileNameDisplay');
-
-  // URL Input
   const urlInput = document.getElementById('url_input');
-
-  // Initialize tooltips
-  $('[data-toggle="tooltip"]').tooltip();
-  
-  // Export buttons
-  const exportTxt = document.getElementById('exportTxt');
-  const exportPdf = document.getElementById('exportPdf');
-
-  // Translation elements
-  const translateOptions = document.querySelectorAll('.translate-option');
-  
-  // History elements
   const historySection = document.getElementById('historySection');
   const historyList = document.getElementById('historyList');
   const clearHistoryBtn = document.getElementById('clearHistory');
+  const summaryOutputElement = document.querySelector('.summary-output');
 
-  // ==================== Dark/Light Mode Toggle ====================
+  // --- 1. Entry Animations & UI Refinement ---
   
-  // Initialize theme from localStorage or system preference
+  // Fade in the summary output if it contains text (on page load)
+  if (summaryOutputElement && summaryOutputElement.textContent.trim().length > 10) {
+    summaryOutputElement.style.opacity = '0';
+    summaryOutputElement.style.transform = 'translateY(10px)';
+    summaryOutputElement.style.transition = 'all 0.6s ease-out';
+    
+    requestAnimationFrame(() => {
+      summaryOutputElement.style.opacity = '1';
+      summaryOutputElement.style.transform = 'translateY(0)';
+    });
+  }
+
+  // --- 2. Dark/Light Mode Toggle ---
   const savedTheme = localStorage.getItem('theme');
-  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const initialTheme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
-  
+  const initialTheme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
   document.documentElement.setAttribute('data-theme', initialTheme);
   updateThemeIcon(initialTheme);
 
@@ -61,14 +51,13 @@ document.addEventListener('DOMContentLoaded', function() {
       const currentTheme = document.documentElement.getAttribute('data-theme');
       const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
       
-      // Animation effect
       themeToggle.style.transform = 'scale(0.8) rotate(180deg)';
       
       setTimeout(() => {
         document.documentElement.setAttribute('data-theme', newTheme);
         localStorage.setItem('theme', newTheme);
         updateThemeIcon(newTheme);
-        themeToggle.style.transform = ''; // Reset via CSS transition
+        themeToggle.style.transform = '';
       }, 150);
     });
   }
@@ -79,8 +68,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // ==================== File Upload Handling ====================
-  
+  // --- 3. File & Word Count Logic ---
   if (fileUpload) {
     fileUpload.addEventListener('change', function(e) {
       const file = e.target.files[0];
@@ -101,151 +89,110 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // ==================== Summary History Management ====================
-  
-  loadHistory();
-  
-  // Logic to save a newly generated summary to history
-  const summaryOutputElement = document.querySelector('.summary-output');
-  if (summaryOutputElement && summaryOutputElement.textContent.trim().length > 50) {
-    // Check if this is a fresh result (not just loaded from history)
-    const isNewResult = !summaryOutputElement.hasAttribute('data-from-history');
-    
-    if (isNewResult) {
-        const inputWordCount = getWordCount(userTextArea.value);
-        const summaryText = summaryOutputElement.textContent.trim();
-        const summaryWordCount = getWordCount(summaryText);
-        
-        saveToHistory({
-          summary: summaryText,
-          inputWords: inputWordCount || (summaryWordCount * 3), // Fallback if input empty (e.g. file upload)
-          summaryWords: summaryWordCount,
-          timestamp: new Date().toISOString()
-        });
-    }
-  }
-  
   function getWordCount(text) {
     return text.trim().length > 0 ? text.trim().split(/\s+/).length : 0;
   }
 
+  function updateWordCount() {
+    if (!userTextArea || !inputStats) return;
+    const text = userTextArea.value.trim();
+    const words = getWordCount(text);
+    const chars = text.length;
+    inputStats.textContent = `${words} words • ${chars} characters`;
+    inputStats.style.color = chars > 48000 ? '#ef4444' : '';
+  }
+
+  if (userTextArea) userTextArea.addEventListener('input', updateWordCount);
+
+  // --- 4. History Management ---
+  loadHistory();
+
+  // Save new results to history
+  if (summaryOutputElement && summaryOutputElement.textContent.trim().length > 50) {
+    const isNewResult = !summaryOutputElement.hasAttribute('data-from-history');
+    if (isNewResult) {
+      const inputWordCount = getWordCount(userTextArea.value);
+      const summaryText = summaryOutputElement.textContent.trim();
+      const summaryWordCount = getWordCount(summaryText);
+      
+      saveToHistory({
+        summary: summaryText,
+        inputWords: inputWordCount || (summaryWordCount * 3),
+        summaryWords: summaryWordCount,
+        timestamp: new Date().toISOString()
+      });
+    }
+  }
+
   function saveToHistory(item) {
     let history = JSON.parse(localStorage.getItem('summaryHistory') || '[]');
-    
-    // Avoid duplicates
     const isDuplicate = history.some(h => h.summary.substring(0, 100) === item.summary.substring(0, 100));
     if (isDuplicate) return;
 
     history.unshift(item);
     if (history.length > 10) history = history.slice(0, 10);
-    
     localStorage.setItem('summaryHistory', JSON.stringify(history));
     loadHistory();
   }
-  
+
   function loadHistory() {
     if (!historySection || !historyList) return;
-    
     const history = JSON.parse(localStorage.getItem('summaryHistory') || '[]');
-    
     if (history.length === 0) {
       historySection.style.display = 'none';
       return;
     }
-    
     historySection.style.display = 'block';
     historyList.innerHTML = '';
-    
     history.forEach((item, index) => {
-      const historyItem = createHistoryItem(item, index);
-      historyList.appendChild(historyItem);
+      historyList.appendChild(createHistoryItem(item, index));
     });
   }
-  
+
   function createHistoryItem(item, index) {
     const div = document.createElement('div');
-    div.className = 'history-item';
-    
+    div.className = 'history-item card p-3 mb-3'; // Using card class for consistent UI
     const date = new Date(item.timestamp);
     const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
     
     div.innerHTML = `
-      <div class="history-item-header">
-        <span class="history-item-date">${formattedDate}</span>
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <small class="text-muted font-weight-bold">${formattedDate}</small>
         <div class="history-item-actions">
-          <button class="history-action-btn use-btn" title="Restore to view">
-            <i class="fas fa-redo"></i>
-          </button>
-          <button class="history-action-btn copy-btn" title="Copy text">
-            <i class="fas fa-copy"></i>
-          </button>
-          <button class="history-action-btn delete-btn" title="Delete">
-            <i class="fas fa-trash"></i>
-          </button>
+          <button class="btn btn-sm btn-link use-btn p-1" title="Restore"><i class="fas fa-redo text-primary"></i></button>
+          <button class="btn btn-sm btn-link copy-btn p-1" title="Copy"><i class="fas fa-copy text-secondary"></i></button>
+          <button class="btn btn-sm btn-link delete-btn p-1" title="Delete"><i class="fas fa-trash text-danger"></i></button>
         </div>
       </div>
-      <div class="history-item-preview">${item.summary}</div>
-      <div class="history-item-stats">
-        <span class="history-stat">
-          <i class="fas fa-file-word"></i> ${item.summaryWords} words
-        </span>
-        <span class="history-stat">
-          <i class="fas fa-chart-line"></i> ${Math.round((item.summaryWords / item.inputWords) * 100)}% reduced
-        </span>
+      <div class="history-item-preview text-muted small text-truncate mb-2" style="max-width: 100%">${item.summary}</div>
+      <div class="d-flex gap-3">
+        <span class="badge badge-light" style="font-size: 0.7rem;">${item.summaryWords} words</span>
+        <span class="badge badge-light" style="font-size: 0.7rem;">${Math.round((item.summaryWords / item.inputWords) * 100)}% reduced</span>
       </div>
     `;
-    
-    // Use button: Restores summary to the output box
-    div.querySelector('.use-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      const output = document.querySelector('.summary-output');
-      if (output) {
-        output.textContent = item.summary;
-        output.setAttribute('data-from-history', 'true');
-        window.scrollTo({top: output.offsetTop - 100, behavior: 'smooth'});
-        showNotification('Summary restored!', 'success');
-      }
+
+    div.querySelector('.use-btn').addEventListener('click', () => {
+      summaryOutputElement.textContent = item.summary;
+      summaryOutputElement.setAttribute('data-from-history', 'true');
+      window.scrollTo({top: summaryOutputElement.offsetTop - 150, behavior: 'smooth'});
+      showNotification('Summary restored!', 'success');
     });
-    
-    // Copy button
-    div.querySelector('.copy-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      copyToClipboard(item.summary);
-    });
-    
-    // Delete button
-    div.querySelector('.delete-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      deleteHistoryItem(index);
+
+    div.querySelector('.copy-btn').addEventListener('click', () => copyToClipboard(item.summary));
+    div.querySelector('.delete-btn').addEventListener('click', () => {
+      let history = JSON.parse(localStorage.getItem('summaryHistory') || '[]');
+      history.splice(index, 1);
+      localStorage.setItem('summaryHistory', JSON.stringify(history));
+      loadHistory();
+      showNotification('Deleted', 'info');
     });
 
     return div;
   }
-  
-  function deleteHistoryItem(index) {
-    let history = JSON.parse(localStorage.getItem('summaryHistory') || '[]');
-    history.splice(index, 1);
-    localStorage.setItem('summaryHistory', JSON.stringify(history));
-    loadHistory();
-    showNotification('Item removed from history', 'success');
-  }
-  
-  if (clearHistoryBtn) {
-    clearHistoryBtn.addEventListener('click', function() {
-      if (confirm('Clear all saved summaries?')) {
-        localStorage.removeItem('summaryHistory');
-        loadHistory();
-        showNotification('History cleared', 'success');
-      }
-    });
-  }
 
-  // ==================== Length Slider & Mode Tabs ====================
-  
+  // --- 5. Tabs & Sliders ---
   function updateLengthUI(value) {
-    lengthOptions.forEach(option => {
-      option.classList.toggle('active', option.getAttribute('data-value') === value);
-    });
+    lengthOptions.forEach(opt => opt.classList.toggle('active', opt.getAttribute('data-value') === value));
   }
 
   if (lengthRange) {
@@ -255,305 +202,83 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  lengthOptions.forEach(option => {
-    option.addEventListener('click', function() {
-      const val = this.getAttribute('data-value');
-      if (lengthRange) lengthRange.value = val;
-      if (lengthInput) lengthInput.value = val;
-      updateLengthUI(val);
-    });
-  });
-
-  // Output Format Selection
   formatTabs.forEach(tab => {
-    tab.addEventListener('click', function(e) {
-      e.preventDefault();
+    tab.addEventListener('click', function() {
       formatTabs.forEach(t => t.classList.remove('active'));
       this.classList.add('active');
       if (modeInput) modeInput.value = this.getAttribute('data-mode');
     });
   });
 
-  // Summary Mode Selection
   summaryModeTabs.forEach(tab => {
-    tab.addEventListener('click', function(e) {
-      e.preventDefault();
+    tab.addEventListener('click', function() {
       summaryModeTabs.forEach(t => t.classList.remove('active'));
       this.classList.add('active');
       if (summaryModeInput) summaryModeInput.value = this.getAttribute('data-mode');
     });
   });
 
-  // ==================== Real-time Word Count ====================
-  
-  function updateWordCount() {
-    const text = userTextArea.value.trim();
-    const words = getWordCount(text);
-    const chars = text.length;
-    
-    if (inputStats) {
-      inputStats.textContent = `${words} words • ${chars} characters`;
-      
-      // Visual warnings for limit
-      if (chars > 48000) {
-        inputStats.style.color = 'var(--danger)';
-        inputStats.style.fontWeight = 'bold';
-      } else {
-        inputStats.style.color = '';
-        inputStats.style.fontWeight = '';
-      }
-    }
-  }
-
-  if (userTextArea) {
-    userTextArea.addEventListener('input', updateWordCount);
-  }
-
-  // ==================== Translation Handling ====================
-
-  if (translateOptions) {
-    translateOptions.forEach(option => {
-      option.addEventListener('click', async function(e) {
-        e.preventDefault();
-        const targetLang = this.getAttribute('data-lang');
-        const outputElement = document.querySelector('.summary-output');
-
-        if (!outputElement) return;
-
-        // Get original text from data attribute if exists, otherwise use current text and save it
-        let sourceText = outputElement.getAttribute('data-original-text');
-
-        if (!sourceText) {
-          const currentText = outputElement.textContent.trim();
-          if (!currentText || outputElement.querySelector('.empty-state')) {
-            showNotification('Generate a summary first!', 'error');
-            return;
-          }
-          sourceText = currentText;
-          outputElement.setAttribute('data-original-text', sourceText);
-        }
-
-        // Show loading state
-        const originalContent = outputElement.innerHTML;
-        outputElement.innerHTML = `
-          <div class="text-center p-4">
-            <div class="spinner-border text-primary" role="status"></div>
-            <p class="mt-2 text-muted">Translating to ${targetLang}...</p>
-          </div>
-        `;
-
-        try {
-          const response = await fetch('/translate', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              text: sourceText,
-              target_language: targetLang
-            })
-          });
-
-          const result = await response.json();
-
-          if (result.success) {
-            outputElement.innerHTML = result.text.replace(/\n/g, '<br>'); // Simple formatting preservation
-            showNotification(`Translated to ${targetLang}`, 'success');
-          } else {
-            throw new Error(result.error || 'Translation failed');
-          }
-        } catch (error) {
-          console.error('Translation error:', error);
-          outputElement.innerHTML = originalContent;
-          showNotification('Translation failed. Please try again.', 'error');
-        }
-      });
-    });
-  }
-
-  // ==================== Export & Form Submission ====================
-  
+  // --- 6. Form Submission & Exports ---
   if (summarizeForm) {
     summarizeForm.addEventListener('submit', function(e) {
-      // Determine active tab
-      const activeTabId = document.querySelector('.input-tabs .nav-link.active').id;
-
+      const activeTab = document.querySelector('.input-tabs .nav-link.active');
+      const activeTabId = activeTab ? activeTab.id : 'text-tab';
       let hasContent = false;
 
-      if (activeTabId === 'text-tab') {
-          hasContent = userTextArea.value.trim().length > 0;
-          // Clear other inputs to avoid confusion
-          if (fileUpload) fileUpload.value = '';
-          if (urlInput) urlInput.value = '';
-      } else if (activeTabId === 'file-tab') {
-          hasContent = fileUpload && fileUpload.files.length > 0;
-          if (userTextArea) userTextArea.value = '';
-          if (urlInput) urlInput.value = '';
-      } else if (activeTabId === 'url-tab') {
-          hasContent = urlInput && urlInput.value.trim().length > 0;
-          if (userTextArea) userTextArea.value = '';
-          if (fileUpload) fileUpload.value = '';
-      }
+      if (activeTabId === 'text-tab') hasContent = userTextArea.value.trim().length > 0;
+      else if (activeTabId === 'file-tab') hasContent = fileUpload && fileUpload.files.length > 0;
+      else if (activeTabId === 'url-tab') hasContent = urlInput && urlInput.value.trim().length > 0;
       
       if (!hasContent) {
         e.preventDefault();
-        showNotification('Please provide text, upload a file, or enter a URL', 'error');
+        showNotification('Input required!', 'error');
         return;
       }
-      
       if (loadingOverlay) loadingOverlay.classList.add('active');
     });
   }
 
-  const exportActions = [
-    { el: exportTxt, action: '/export/txt' },
-    { el: exportPdf, action: '/export/pdf' }
-  ];
-
-  exportActions.forEach(({ el, action }) => {
-    if (el) {
-      el.addEventListener('click', () => {
-        const output = document.querySelector('.summary-output');
-        if (!output || !output.textContent.trim()) {
-            showNotification('Nothing to export yet!', 'error');
-            return;
-        }
-        
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = action;
-
-        const textInput = document.createElement('input');
-        textInput.type = 'hidden';
-        textInput.name = 'summary_text';
-        textInput.value = output.textContent;
-        form.appendChild(textInput);
-
-        // Pass mode if handwriting to include font in PDF
-        if (action.includes('pdf')) {
-            const modeInput = document.createElement('input');
-            modeInput.type = 'hidden';
-            modeInput.name = 'mode';
-            const isHandwriting = output.classList.contains('handwriting-font');
-            modeInput.value = isHandwriting ? 'handwriting' : 'paragraph';
-            form.appendChild(modeInput);
-        }
-
-        document.body.appendChild(form);
-        form.submit();
-        document.body.removeChild(form);
-        showNotification('Downloading...', 'success');
-      });
-    }
-  });
-
-  // ==================== Clipboard Logic ====================
-  
-  if (copyBtn) {
-    copyBtn.addEventListener('click', () => {
-      const output = document.querySelector('.summary-output');
-      if (output) {
-        if (output.classList.contains('handwriting-font')) {
-            // Attempt to copy HTML with font style for rich text editors
-            const htmlContent = `<div style="font-family: 'Caveat', cursive; font-size: 24px;">${output.textContent.replace(/\n/g, '<br>')}</div>`;
-            copyRichText(htmlContent, output.textContent);
-        } else {
-            copyToClipboard(output.textContent);
-        }
-      }
-    });
-  }
-  
-  async function copyRichText(html, text) {
-      try {
-          const blobHtml = new Blob([html], { type: 'text/html' });
-          const blobText = new Blob([text], { type: 'text/plain' });
-          const data = [new ClipboardItem({
-              'text/html': blobHtml,
-              'text/plain': blobText
-          })];
-          await navigator.clipboard.write(data);
-          showCopySuccess();
-      } catch (err) {
-          console.error('Rich copy failed, falling back to text', err);
-          copyToClipboard(text);
-      }
-  }
-
+  // --- 7. Clipboard & Notifications ---
   async function copyToClipboard(text) {
     try {
       await navigator.clipboard.writeText(text);
-      showCopySuccess();
-    } catch (err) {
-      // Fallback
-      const textArea = document.createElement('textarea');
-      textArea.value = text;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textArea);
-      showCopySuccess();
-    }
-  }
-
-  function showCopySuccess() {
-    if (copyBtn) {
-      const originalHTML = copyBtn.innerHTML;
-      copyBtn.classList.add('copied');
-      copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
-      setTimeout(() => {
-        copyBtn.classList.remove('copied');
-        copyBtn.innerHTML = originalHTML;
-      }, 2000);
-    } else {
       showNotification('Copied to clipboard!', 'success');
+    } catch (err) {
+      showNotification('Copy failed', 'error');
     }
   }
 
-  // ==================== UI Notifications & Shortcuts ====================
-  
-  function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `alert alert-${type === 'error' ? 'danger' : 'success'} notification-toast`;
-    notification.innerHTML = `<i class="fas fa-${type === 'error' ? 'exclamation-circle' : 'check-circle'}"></i> ${message}`;
-    
-    notification.style.cssText = `
-      position: fixed; bottom: 20px; left: 20px; z-index: 10000;
-      min-width: 250px; padding: 1rem; border-radius: 12px;
-      box-shadow: var(--shadow-lg); background: var(--bg-primary);
-      border-left: 5px solid ${type === 'error' ? 'var(--danger)' : 'var(--success)'};
-      animation: slideInLeft 0.3s ease forwards;
+  if (copyBtn) copyBtn.addEventListener('click', () => {
+    if (summaryOutputElement) copyToClipboard(summaryOutputElement.textContent);
+  });
+
+  function showNotification(message, type = 'success') {
+    const existing = document.querySelector('.notification-toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.className = `notification-toast alert-${type}`;
+    toast.style.cssText = `
+      position: fixed; bottom: 2rem; right: 2rem; z-index: 9999;
+      padding: 1rem 1.5rem; border-radius: var(--radius-md);
+      background: var(--bg-card); border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-lg); color: var(--text-main);
+      animation: slideIn 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
     `;
-    
-    document.body.appendChild(notification);
+    toast.innerHTML = `<i class="fas fa-info-circle mr-2" style="color:var(--primary)"></i> ${message}`;
+    document.body.appendChild(toast);
     setTimeout(() => {
-      notification.style.animation = 'fadeOut 0.5s ease forwards';
-      setTimeout(() => notification.remove(), 500);
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(20px)';
+      toast.style.transition = 'all 0.4s';
+      setTimeout(() => toast.remove(), 400);
     }, 3000);
   }
 
-  // Animation styles for notifications
-  const style = document.createElement('style');
-  style.textContent = `
-    @keyframes slideInLeft { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-    @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
-  `;
-  document.head.appendChild(style);
+  // Inject animation keyframes
+  const sheet = document.createElement('style');
+  sheet.innerHTML = `@keyframes slideIn { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`;
+  document.head.appendChild(sheet);
 
-  // Keyboard Shortcuts
-  document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && document.activeElement === userTextArea) {
-      summarizeForm.submit();
-    }
-    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-      e.preventDefault();
-      userTextArea.focus();
-    }
-    if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
-      e.preventDefault();
-      if (themeToggle) themeToggle.click();
-    }
-  });
-
-  console.log('🚀 AI Summarizer Active');
+  console.log('🚀 AI Summarizer: UI Enhanced');
 });
