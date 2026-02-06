@@ -1,166 +1,284 @@
-// app.js - SaaS Pro Logic (Restored Exports & Translation)
+// app.js - Professional AI Summarizer Logic
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Selectors
-    const summarizeForm = document.getElementById('summarizeForm');
-    const userTextArea = document.getElementById('user_text');
-    const summaryOutput = document.querySelector('.summary-output');
-    const loadingOverlay = document.getElementById('loadingOverlay');
-    const themeToggle = document.getElementById('themeToggle');
+  // --- Elements ---
+  const lengthRange = document.getElementById('lengthRange');
+  const lengthInput = document.getElementById('lengthInput');
+  const lengthOptions = document.querySelectorAll('.length-option');
+  const formatTabs = document.querySelectorAll('.format-tab');
+  const modeInput = document.getElementById('modeInput');
+  const summaryModeTabs = document.querySelectorAll('.summary-mode-tab');
+  const summaryModeInput = document.getElementById('summaryModeInput');
+  const userTextArea = document.getElementById('user_text');
+  const inputStats = document.getElementById('inputStats');
+  const summarizeForm = document.getElementById('summarizeForm');
+  const loadingOverlay = document.getElementById('loadingOverlay');
+  const copyBtn = document.getElementById('copyBtn');
+  const themeToggle = document.getElementById('themeToggle');
+  const themeIcon = document.getElementById('themeIcon');
+  const fileUpload = document.getElementById('fileUpload');
+  const fileName = document.getElementById('fileName');
+  const clearFileBtn = document.getElementById('clearFile');
+  const fileNameDisplay = document.getElementById('fileNameDisplay');
+  const urlInput = document.getElementById('url_input');
+  const historySection = document.getElementById('historySection');
+  const historyList = document.getElementById('historyList');
+  const clearHistoryBtn = document.getElementById('clearHistory');
+  const summaryOutputElement = document.querySelector('.summary-output');
 
-    // --- 1. DOWNLOAD RECOVERY (TXT & PDF) ---
-    // This creates a hidden form to send data to your backend routes
-    const setupExport = (btnId, endpoint) => {
-        const btn = document.getElementById(btnId);
-        if (!btn) return;
+  // --- 1. Entry Animations & UI Refinement ---
+  
+  // Fade in the summary output if it contains text (on page load)
+  if (summaryOutputElement && summaryOutputElement.textContent.trim().length > 10) {
+    summaryOutputElement.style.opacity = '0';
+    summaryOutputElement.style.transform = 'translateY(10px)';
+    summaryOutputElement.style.transition = 'all 0.6s ease-out';
+    
+    requestAnimationFrame(() => {
+      summaryOutputElement.style.opacity = '1';
+      summaryOutputElement.style.transform = 'translateY(0)';
+    });
+  }
 
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const content = summaryOutput.textContent.trim();
-            
-            if (!content || content.includes("Summary will appear here")) {
-                showNotification("No content to export", "error");
-                return;
-            }
+  // --- 2. Dark/Light Mode Toggle ---
+  const savedTheme = localStorage.getItem('theme');
+  const initialTheme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-theme', initialTheme);
+  updateThemeIcon(initialTheme);
 
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = endpoint;
+  if (themeToggle) {
+    themeToggle.addEventListener('click', function() {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      
+      themeToggle.style.transform = 'scale(0.8) rotate(180deg)';
+      
+      setTimeout(() => {
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateThemeIcon(newTheme);
+        themeToggle.style.transform = '';
+      }, 150);
+    });
+  }
 
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'summary_text';
-            input.value = content;
+  function updateThemeIcon(theme) {
+    if (themeIcon) {
+      themeIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+    }
+  }
 
-            // Include handwriting mode flag for PDF styling if needed
-            if (endpoint.includes('pdf')) {
-                const isHandwriting = summaryOutput.classList.contains('handwriting-font');
-                const modeInput = document.createElement('input');
-                modeInput.type = 'hidden';
-                modeInput.name = 'mode';
-                modeInput.value = isHandwriting ? 'handwriting' : 'standard';
-                form.appendChild(modeInput);
-            }
+  // --- 3. File & Word Count Logic ---
+  if (fileUpload) {
+    fileUpload.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        fileName.textContent = file.name;
+        if (fileNameDisplay) fileNameDisplay.style.display = 'block';
+        updateWordCount();
+      }
+    });
+  }
+  
+  if (clearFileBtn) {
+    clearFileBtn.addEventListener('click', function() {
+      fileUpload.value = '';
+      fileName.textContent = '';
+      if (fileNameDisplay) fileNameDisplay.style.display = 'none';
+      updateWordCount();
+    });
+  }
 
-            form.appendChild(input);
-            document.body.appendChild(form);
-            form.submit();
-            document.body.removeChild(form);
-            showNotification("Downloading file...", "success");
-        });
-    };
+  function getWordCount(text) {
+    return text.trim().length > 0 ? text.trim().split(/\s+/).length : 0;
+  }
 
-    setupExport('exportTxt', '/export/txt');
-    setupExport('exportPdf', '/export/pdf');
+  function updateWordCount() {
+    if (!userTextArea || !inputStats) return;
+    const text = userTextArea.value.trim();
+    const words = getWordCount(text);
+    const chars = text.length;
+    inputStats.textContent = `${words} words • ${chars} characters`;
+    inputStats.style.color = chars > 48000 ? '#ef4444' : '';
+  }
 
-    // --- 2. TRANSLATION RECOVERY ---
-    const translateOptions = document.querySelectorAll('.translate-option');
-    translateOptions.forEach(option => {
-        option.addEventListener('click', async function(e) {
-            e.preventDefault();
-            const lang = this.getAttribute('data-lang');
-            const textToTranslate = summaryOutput.textContent.trim();
+  if (userTextArea) userTextArea.addEventListener('input', updateWordCount);
 
-            if (!textToTranslate || textToTranslate.length < 5) {
-                showNotification("Generate a summary first", "error");
-                return;
-            }
+  // --- 4. History Management ---
+  loadHistory();
 
-            // UI Loading State
-            const originalContent = summaryOutput.innerHTML;
-            summaryOutput.innerHTML = `
-                <div class="text-center p-5">
-                    <div class="spinner-border text-primary mb-3"></div>
-                    <p class="text-muted">Translating to ${lang}...</p>
-                </div>`;
+  // Save new results to history
+  if (summaryOutputElement && summaryOutputElement.textContent.trim().length > 50) {
+    const isNewResult = !summaryOutputElement.hasAttribute('data-from-history');
+    if (isNewResult) {
+      const inputWordCount = getWordCount(userTextArea.value);
+      const summaryText = summaryOutputElement.textContent.trim();
+      const summaryWordCount = getWordCount(summaryText);
+      
+      saveToHistory({
+        summary: summaryText,
+        inputWords: inputWordCount || (summaryWordCount * 3),
+        summaryWords: summaryWordCount,
+        timestamp: new Date().toISOString()
+      });
+    }
+  }
 
-            try {
-                const response = await fetch('/translate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        text: textToTranslate,
-                        target_language: lang
-                    })
-                });
+  function saveToHistory(item) {
+    let history = JSON.parse(localStorage.getItem('summaryHistory') || '[]');
+    const isDuplicate = history.some(h => h.summary.substring(0, 100) === item.summary.substring(0, 100));
+    if (isDuplicate) return;
 
-                const data = await response.json();
-                if (data.success) {
-                    summaryOutput.innerHTML = data.text.replace(/\n/g, '<br>');
-                    showNotification(`Translated to ${lang}`, "success");
-                } else {
-                    throw new Error(data.error);
-                }
-            } catch (err) {
-                summaryOutput.innerHTML = originalContent;
-                showNotification("Translation service unavailable", "error");
-            }
-        });
+    history.unshift(item);
+    if (history.length > 10) history = history.slice(0, 10);
+    localStorage.setItem('summaryHistory', JSON.stringify(history));
+    loadHistory();
+  }
+
+  function loadHistory() {
+    if (!historySection || !historyList) return;
+    const history = JSON.parse(localStorage.getItem('summaryHistory') || '[]');
+    if (history.length === 0) {
+      historySection.style.display = 'none';
+      return;
+    }
+    historySection.style.display = 'block';
+    historyList.innerHTML = '';
+    history.forEach((item, index) => {
+      historyList.appendChild(createHistoryItem(item, index));
+    });
+  }
+
+  function createHistoryItem(item, index) {
+    const div = document.createElement('div');
+    div.className = 'history-item card p-3 mb-3'; // Using card class for consistent UI
+    const date = new Date(item.timestamp);
+    const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    
+    div.innerHTML = `
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <small class="text-muted font-weight-bold">${formattedDate}</small>
+        <div class="history-item-actions">
+          <button class="btn btn-sm btn-link use-btn p-1" title="Restore"><i class="fas fa-redo text-primary"></i></button>
+          <button class="btn btn-sm btn-link copy-btn p-1" title="Copy"><i class="fas fa-copy text-secondary"></i></button>
+          <button class="btn btn-sm btn-link delete-btn p-1" title="Delete"><i class="fas fa-trash text-danger"></i></button>
+        </div>
+      </div>
+      <div class="history-item-preview text-muted small text-truncate mb-2" style="max-width: 100%">${item.summary}</div>
+      <div class="d-flex gap-3">
+        <span class="badge badge-light" style="font-size: 0.7rem;">${item.summaryWords} words</span>
+        <span class="badge badge-light" style="font-size: 0.7rem;">${Math.round((item.summaryWords / item.inputWords) * 100)}% reduced</span>
+      </div>
+    `;
+
+    div.querySelector('.use-btn').addEventListener('click', () => {
+      summaryOutputElement.textContent = item.summary;
+      summaryOutputElement.setAttribute('data-from-history', 'true');
+      window.scrollTo({top: summaryOutputElement.offsetTop - 150, behavior: 'smooth'});
+      showNotification('Summary restored!', 'success');
     });
 
-    // --- 3. PROFESSIONAL TAB LOGIC ---
-    const initTabs = (tabSelector, inputId) => {
-        const tabs = document.querySelectorAll(tabSelector);
-        const hiddenInput = document.getElementById(inputId);
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                tabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                if (hiddenInput) hiddenInput.value = tab.getAttribute('data-mode');
-            });
-        });
-    };
+    div.querySelector('.copy-btn').addEventListener('click', () => copyToClipboard(item.summary));
+    div.querySelector('.delete-btn').addEventListener('click', () => {
+      let history = JSON.parse(localStorage.getItem('summaryHistory') || '[]');
+      history.splice(index, 1);
+      localStorage.setItem('summaryHistory', JSON.stringify(history));
+      loadHistory();
+      showNotification('Deleted', 'info');
+    });
 
-    initTabs('.format-tab', 'modeInput');
-    initTabs('.summary-mode-tab', 'summaryModeInput');
+    return div;
+  }
 
-    // --- 4. THEME MANAGEMENT ---
-    if (themeToggle) {
-        themeToggle.addEventListener('click', () => {
-            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-            const newTheme = isDark ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-        });
+  // --- 5. Tabs & Sliders ---
+  function updateLengthUI(value) {
+    lengthOptions.forEach(opt => opt.classList.toggle('active', opt.getAttribute('data-value') === value));
+  }
+
+  if (lengthRange) {
+    lengthRange.addEventListener('input', (e) => {
+      lengthInput.value = e.target.value;
+      updateLengthUI(e.target.value);
+    });
+  }
+
+  formatTabs.forEach(tab => {
+    tab.addEventListener('click', function() {
+      formatTabs.forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+      if (modeInput) modeInput.value = this.getAttribute('data-mode');
+    });
+  });
+
+  summaryModeTabs.forEach(tab => {
+    tab.addEventListener('click', function() {
+      summaryModeTabs.forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+      if (summaryModeInput) summaryModeInput.value = this.getAttribute('data-mode');
+    });
+  });
+
+  // --- 6. Form Submission & Exports ---
+  if (summarizeForm) {
+    summarizeForm.addEventListener('submit', function(e) {
+      const activeTab = document.querySelector('.input-tabs .nav-link.active');
+      const activeTabId = activeTab ? activeTab.id : 'text-tab';
+      let hasContent = false;
+
+      if (activeTabId === 'text-tab') hasContent = userTextArea.value.trim().length > 0;
+      else if (activeTabId === 'file-tab') hasContent = fileUpload && fileUpload.files.length > 0;
+      else if (activeTabId === 'url-tab') hasContent = urlInput && urlInput.value.trim().length > 0;
+      
+      if (!hasContent) {
+        e.preventDefault();
+        showNotification('Input required!', 'error');
+        return;
+      }
+      if (loadingOverlay) loadingOverlay.classList.add('active');
+    });
+  }
+
+  // --- 7. Clipboard & Notifications ---
+  async function copyToClipboard(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      showNotification('Copied to clipboard!', 'success');
+    } catch (err) {
+      showNotification('Copy failed', 'error');
     }
+  }
 
-    // --- 5. UTILITIES ---
-    function showNotification(msg, type = "success") {
-        const toast = document.createElement('div');
-        toast.className = `notification-toast ${type}`;
-        toast.style.cssText = `
-            position: fixed; bottom: 30px; right: 30px; 
-            background: var(--bg-card); color: var(--text-main); 
-            padding: 1rem 2rem; border-radius: 12px; 
-            border-left: 5px solid ${type === 'error' ? 'var(--danger)' : 'var(--primary)'};
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 10000;
-            animation: slideUp 0.3s ease;
-        `;
-        toast.innerText = msg;
-        document.body.appendChild(toast);
-        setTimeout(() => {
-            toast.style.opacity = '0';
-            setTimeout(() => toast.remove(), 500);
-        }, 3000);
-    }
+  if (copyBtn) copyBtn.addEventListener('click', () => {
+    if (summaryOutputElement) copyToClipboard(summaryOutputElement.textContent);
+  });
 
-    // Copy to Clipboard
-    const copyBtn = document.getElementById('copyBtn');
-    if (copyBtn) {
-        copyBtn.addEventListener('click', () => {
-            const text = summaryOutput.textContent;
-            navigator.clipboard.writeText(text).then(() => {
-                showNotification("Copied to clipboard!");
-            });
-        });
-    }
+  function showNotification(message, type = 'success') {
+    const existing = document.querySelector('.notification-toast');
+    if (existing) existing.remove();
 
-    // Form Submission
-    if (summarizeForm) {
-        summarizeForm.addEventListener('submit', () => {
-            if (userTextArea.value.trim().length > 0) {
-                loadingOverlay.classList.add('active');
-            }
-        });
-    }
+    const toast = document.createElement('div');
+    toast.className = `notification-toast alert-${type}`;
+    toast.style.cssText = `
+      position: fixed; bottom: 2rem; right: 2rem; z-index: 9999;
+      padding: 1rem 1.5rem; border-radius: var(--radius-md);
+      background: var(--bg-card); border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-lg); color: var(--text-main);
+      animation: slideIn 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    `;
+    toast.innerHTML = `<i class="fas fa-info-circle mr-2" style="color:var(--primary)"></i> ${message}`;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(20px)';
+      toast.style.transition = 'all 0.4s';
+      setTimeout(() => toast.remove(), 400);
+    }, 3000);
+  }
+
+  // Inject animation keyframes
+  const sheet = document.createElement('style');
+  sheet.innerHTML = `@keyframes slideIn { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`;
+  document.head.appendChild(sheet);
+
+  console.log('🚀 AI Summarizer: UI Enhanced');
 });
