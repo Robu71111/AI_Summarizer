@@ -161,12 +161,12 @@ def call_openrouter_api(prompt_text: str) -> dict:
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://your-app-url.vercel.app",
+        "HTTP-Referer": "https://ai-summarizer-self.vercel.app",
         "X-Title": "AI Summarizer"
     }
     
     payload = {
-        "model": "meta-llama/llama-3.3-70b-instruct:free",
+        "model": "openrouter/free",
         "messages": [
             {
                 "role": "user",
