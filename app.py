@@ -8,6 +8,7 @@ import PyPDF2
 import docx
 from bs4 import BeautifulSoup
 
+# Load environment variables
 load_dotenv()
 app = Flask(__name__)
 
@@ -86,12 +87,6 @@ def extract_text_from_url(url):
 def build_prompt(user_text: str, length_choice: str, mode: str = 'paragraph', summary_mode: str = 'standard') -> str:
     """
     Builds a prompt string guiding the model to produce summaries in different formats.
-    
-    Args:
-        user_text: The text to summarize
-        length_choice: '1' (short), '2' (medium), '3' (long)
-        mode: 'paragraph', 'bullets', 'takeaways', or 'handwriting'
-        summary_mode: 'standard', 'formal', or 'creative'
     """
     # Length instructions
     if length_choice == '1':  # short
@@ -113,7 +108,6 @@ def build_prompt(user_text: str, length_choice: str, mode: str = 'paragraph', su
             "Focus on the most important insights and actionable points."
         )
     else:  # paragraph or handwriting
-        # 'handwriting' is treated as paragraph for text generation purposes
         format_instructions = "Write the summary in clear, flowing paragraph form."
 
     # Summary Mode (Style) instructions
@@ -144,72 +138,85 @@ def build_prompt(user_text: str, length_choice: str, mode: str = 'paragraph', su
 
 def call_openrouter_api(prompt_text: str) -> dict:
     """
-    Calls the OpenRouter API with Meta Llama model.
-    
-    Returns:
-        dict with 'success' (bool), 'text' (str), and optional 'error' (str)
+    Calls OpenRouter API with fallback logic.
+    1. Tries Llama 3.1 405B (Free)
+    2. If that fails, falls back to 'openrouter/free' (Auto Router)
     """
     if not OPENROUTER_API_KEY:
         return {
-            'success': False,
-            'text': '',
+            'success': False, 
+            'text': '', 
             'error': 'API key not configured. Please add OPENROUTER_API_KEY to your .env file.'
         }
     
     endpoint = "https://openrouter.ai/api/v1/chat/completions"
-    
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json",
         "HTTP-Referer": "https://ai-summarizer-self.vercel.app",
         "X-Title": "AI Summarizer"
     }
+
+    # Define the sequence of models to try
+    # 1. Primary: Llama 3.3 70B (High quality)
+    # 2. Fallback: OpenRouter Free (Auto-selects best available free model)
+    models_to_try = ["meta-llama/llama-3.3-70b-instruct:free", "openrouter/free"]
     
-    payload = {
-        "model": "openrouter/free",
-        "messages": [
-            {
-                "role": "user",
-                "content": prompt_text
-            }
-        ],
-        "temperature": 0.7,
-        "max_tokens": 2048
-    }
-    
-    try:
-        response = requests.post(endpoint, json=payload, headers=headers, timeout=45)
-        data = response.json()
+    last_error = None
+
+    for model_id in models_to_try:
+        print(f"Attempting summary with model: {model_id}") # Debugging log
         
-        if response.status_code == 200:
-            try:
-                summarized_text = data["choices"][0]["message"]["content"]
-                return {'success': True, 'text': summarized_text}
-            except (KeyError, IndexError) as e:
-                return {
-                    'success': False,
-                    'text': '',
-                    'error': f'Unexpected API response format: {str(e)}'
-                }
-        else:
-            error_msg = data.get('error', {}).get('message', response.text)
-            return {
-                'success': False,
-                'text': '',
-                'error': f'API Error (HTTP {response.status_code}): {error_msg}'
-            }
-    except requests.Timeout:
-        return {
-            'success': False,
-            'text': '',
-            'error': 'Request timed out. Please try again.'
+        payload = {
+            "model": model_id,
+            "messages": [{"role": "user", "content": prompt_text}],
+            "temperature": 0.7,
+            "max_tokens": 2048
         }
-    except Exception as e:
-        return {
-            'success': False,
-            'text': '',
-            'error': f'Exception: {str(e)}'
-        }
+
+        try:
+            # Short timeout for primary to fail fast, longer for fallback
+            timeout_seconds = 45 if model_id == "openrouter/free" else 25
+            
+            response = requests.post(endpoint, json=payload, headers=headers, timeout=timeout_seconds)
+            
+            if response.status_code == 200:
+                data = response.json()
+                try:
+                    summarized_text = data["choices"][0]["message"]["content"]
+                    actual_model = data.get("model", model_id) # Get the actual model used
+                    
+                    return {
+                        'success': True, 
+                        'text': summarized_text,
+                        'model_used': actual_model # Return this so you can show it in UI later
+                    }
+                except (KeyError, IndexError) as e:
+                    print(f"Format error with {model_id}: {e}")
+                    last_error = f'Unexpected response format from {model_id}'
+                    continue # Try next model
+            else:
+                # If 429 (Rate Limit) or 503 (Service Unavailable), we definitely want to continue
+                error_msg = response.text
+                print(f"Failed {model_id} with status {response.status_code}: {error_msg}")
+                last_error = f'API Error ({response.status_code})'
+                continue # Try next model
+
+        except requests.Timeout:
+            print(f"Timeout connecting to {model_id}")
+            last_error = 'Request timed out'
+            continue
+        except Exception as e:
+            print(f"Exception with {model_id}: {str(e)}")
+            last_error = str(e)
+            continue
+
+    # If we exit the loop, all models failed
+    return {
+        'success': False,
+        'text': '',
+        'error': f'All models failed. Last error: {last_error}'
+    }
 
 def count_words(text: str) -> int:
     """Count words in text."""
@@ -288,7 +295,7 @@ def generate():
     if not result['success']:
         return render_template(
             'index.html',
-            error=result['error'],
+            error=result.get('error', 'Unknown error occurred'),
             user_text=user_text,
             input_word_count=input_word_count,
             input_sentence_count=input_sentence_count,
@@ -296,6 +303,9 @@ def generate():
         )
     
     summarized_text = result['text']
+    # If you want to show the model used in the template, you can pass it here
+    model_used = result.get('model_used', 'Unknown Model')
+
     summary_word_count = count_words(summarized_text)
     summary_sentence_count = count_sentences(summarized_text)
     summary_char_count = len(summarized_text)
@@ -313,7 +323,8 @@ def generate():
         user_text_url=user_text_url,
         selected_length=length_choice,
         selected_mode=mode,
-        selected_summary_mode=summary_mode
+        selected_summary_mode=summary_mode,
+        model_used=model_used  # Passed to template
     )
 
 @app.route('/export/txt', methods=['POST'])
@@ -430,8 +441,6 @@ def api_wordcount():
         'sentences': count_sentences(text)
     })
 
-if __name__ == '__main__':
-    app.run(debug=True, port=5000)
 @app.route('/translate', methods=['POST'])
 def translate():
     """Translate text to target language."""
@@ -451,3 +460,6 @@ def translate():
 
     result = call_openrouter_api(prompt)
     return jsonify(result)
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)

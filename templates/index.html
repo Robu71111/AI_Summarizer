@@ -139,7 +139,6 @@
               </ul>
 
               <div class="tab-content" id="inputTabContent">
-                <!-- Text Input Panel -->
                 <div class="tab-pane fade show active" id="text-panel" role="tabpanel" aria-labelledby="text-tab">
                   <textarea class="form-control text-input"
                             name="user_text"
@@ -149,7 +148,6 @@
                             placeholder="Paste or type your text here... (Max 50,000 characters)">{{ user_text if not user_text_url else '' }}</textarea>
                 </div>
 
-                <!-- File Upload Panel -->
                 <div class="tab-pane fade" id="file-panel" role="tabpanel" aria-labelledby="file-tab">
                   <div class="file-upload-section flex-column align-items-center justify-content-center p-5 text-center" style="border: 2px dashed var(--border-subtle); border-radius: var(--radius-md);">
                     <label class="file-upload-label mb-3">
@@ -168,7 +166,6 @@
                   </div>
                 </div>
 
-                <!-- URL Input Panel -->
                 <div class="tab-pane fade" id="url-panel" role="tabpanel" aria-labelledby="url-tab">
                   <div class="url-input-section p-4">
                     <label for="url_input" class="control-label mb-2">Enter Article URL</label>
@@ -246,6 +243,17 @@
           <div class="card-body output-body">
             {% if summarized_text %}
               <div class="summary-output {% if selected_mode == 'handwriting' %}handwriting-font{% endif %}">{{ summarized_text }}</div>
+              
+              {% if model_used %}
+              <div class="d-flex justify-content-end mt-2 mb-2">
+                <span style="font-size: 0.75rem; color: #6c757d; background-color: rgba(0,0,0,0.05); padding: 4px 10px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.1); font-family: monospace;">
+                    <i class="fas fa-microchip"></i> Powered by: 
+                    <span style="font-weight: bold; color: #4f46e5;">
+                        {{ model_used.split('/')[-1].split(':')[0].replace('-', ' ').upper() }}
+                    </span>
+                </span>
+              </div>
+              {% endif %}
               <div class="output-stats">
                 <span class="stat-badge">
                   <i class="fas fa-chart-line"></i> 
@@ -327,7 +335,7 @@
       <p class="mb-1">
         <strong>AI Summarizer</strong>
       </p>
-      <small>&copy; 2025 All rights reserved</small>
+      <small>&copy; 2026 Summarize AI. All rights reserved</small>
     </div>
   </footer>
 
