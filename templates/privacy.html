@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <title>Privacy Policy — AI Summarizer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32.png') }}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <style>
+    .legal-page{max-width:760px;margin:0 auto;padding:40px 20px 80px;position:relative;z-index:1}
+    .legal-back{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--t3);margin-bottom:32px;text-decoration:none;transition:color 0.15s}
+    .legal-back:hover{color:var(--sky);text-decoration:none}
+    .legal-title{font-size:clamp(28px,4vw,40px);font-weight:700;letter-spacing:-1.5px;color:var(--t1);margin-bottom:8px}
+    .legal-updated{font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--t3);margin-bottom:40px}
+    .legal-section{margin-bottom:32px}
+    .legal-section h2{font-size:18px;font-weight:700;color:var(--t1);margin-bottom:12px;letter-spacing:-0.3px}
+    .legal-section p,.legal-section li{font-size:15px;color:var(--t2);line-height:1.8}
+    .legal-section ul{padding-left:20px;margin-top:8px}
+    .legal-section li{margin-bottom:6px}
+    .legal-highlight{background:var(--primary-soft);border:1px solid rgba(58,154,255,0.2);border-radius:12px;padding:16px 20px;margin:16px 0}
+    .legal-highlight p{color:var(--sky);font-weight:600;font-size:14px;margin:0}
+  </style>
+</head>
+<body>
+  <div class="net-bg" aria-hidden="true">
+    <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <defs><radialGradient id="ng1" cx="20%" cy="30%"><stop offset="0%" stop-color="var(--net-color)" stop-opacity="0.18"/><stop offset="100%" stop-color="var(--net-color)" stop-opacity="0"/></radialGradient></defs>
+      <rect width="1440" height="900" fill="url(#ng1)"/>
+      <g stroke="var(--net-color)" stroke-width="0.6" fill="none" opacity="0.15">
+        <line x1="120" y1="80" x2="280" y2="160"/><line x1="280" y1="160" x2="200" y2="320"/><line x1="440" y1="100" x2="620" y2="60"/><line x1="800" y1="120" x2="960" y2="80"/><line x1="1140" y1="140" x2="1300" y2="100"/><line x1="160" y1="480" x2="320" y2="440"/><line x1="780" y1="460" x2="920" y2="540"/><line x1="1060" y1="720" x2="1240" y2="800"/>
+      </g>
+      <g fill="var(--net-color)" opacity="0.2"><circle cx="280" cy="160" r="2.5"/><circle cx="620" cy="60" r="2"/><circle cx="960" cy="80" r="2.5"/><circle cx="1300" cy="100" r="2"/><circle cx="320" cy="440" r="2"/><circle cx="920" cy="540" r="2.5"/></g>
+    </svg>
+  </div>
+
+  <nav class="top-nav">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">
+        <div class="logo-icon"><i class="fas fa-bolt"></i></div>
+        <span class="logo-text">AI <em>Summarizer</em></span>
+      </a>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+        <i class="fas fa-moon" id="themeIcon"></i>
+      </button>
+    </div>
+  </nav>
+
+  <div class="legal-page">
+    <a href="/" class="legal-back"><i class="fas fa-arrow-left"></i> Back to Summarizer</a>
+    <h1 class="legal-title">Privacy Policy</h1>
+    <div class="legal-updated">Last updated: March 17, 2026</div>
+
+    <div class="legal-highlight">
+      <p><i class="fas fa-shield-alt"></i> Your privacy matters. We collect minimal data and never sell your information.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>1. Information We Collect</h2>
+      <p>AI Summarizer is designed with privacy in mind. Here's what we handle:</p>
+      <ul>
+        <li><strong>Text content you submit</strong> — text, uploaded files, and URLs are sent to our AI processing service to generate summaries. This content is processed in real-time and is not stored on our servers after the summary is generated.</li>
+        <li><strong>Local storage data</strong> — your recent summary history, theme preferences, and settings are stored locally in your browser using localStorage. This data never leaves your device.</li>
+        <li><strong>Basic analytics</strong> — we may collect anonymized usage data such as page views and feature usage to improve the service. No personally identifiable information is collected.</li>
+      </ul>
+    </div>
+
+    <div class="legal-section">
+      <h2>2. How We Use Your Information</h2>
+      <p>The text you submit is used solely to generate your requested summary. It is sent to third-party AI model providers (via OpenRouter) for processing. We do not:</p>
+      <ul>
+        <li>Store your submitted text after processing</li>
+        <li>Use your content to train AI models</li>
+        <li>Share your content with any third parties beyond the AI processing provider</li>
+        <li>Track or profile individual users</li>
+      </ul>
+    </div>
+
+    <div class="legal-section">
+      <h2>3. Third-Party Services</h2>
+      <p>We use the following third-party services:</p>
+      <ul>
+        <li><strong>OpenRouter</strong> — routes AI requests to various model providers for text summarization and translation. Their privacy policy applies to content processed through their service.</li>
+        <li><strong>Vercel</strong> — hosts the application. Standard web server logs may be collected.</li>
+        <li><strong>Google Fonts</strong> and <strong>Font Awesome</strong> — for typography and icons, loaded via CDN.</li>
+      </ul>
+    </div>
+
+    <div class="legal-section">
+      <h2>4. Data Security</h2>
+      <p>All communications between your browser and our service are encrypted using HTTPS/TLS. We do not maintain user accounts or store passwords. File uploads are processed in memory and discarded immediately after text extraction.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>5. Your Rights</h2>
+      <p>Since we don't store personal data on our servers, there is minimal data to manage. You can clear your local summary history at any time using the "Clear" button in the Recent Summaries section. Clearing your browser's localStorage will remove all locally stored preferences and history.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>6. Cookies</h2>
+      <p>AI Summarizer does not use cookies. All user preferences are stored using your browser's localStorage, which is entirely client-side and not transmitted to any server.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>7. Changes to This Policy</h2>
+      <p>We may update this privacy policy from time to time. Any changes will be reflected on this page with an updated revision date. Continued use of the service after changes constitutes acceptance of the revised policy.</p>
+    </div>
+
+    <div class="legal-section">
+      <h2>8. Contact</h2>
+      <p>If you have questions about this privacy policy, you can reach us at <a href="mailto:vishvashukla.16@gmail.com">vishvashukla.16@gmail.com</a>.</p>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="logo-icon logo-icon-sm"><i class="fas fa-bolt"></i></div>
+        <div>
+          <div class="footer-name">AI <em>Summarizer</em></div>
+          <div class="footer-copy">© 2026 All rights reserved</div>
+        </div>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Other Services</div>
+        <a href="https://ba-copilot-mvp.vercel.app" target="_blank" rel="noopener" class="footer-link">BA Copilot</a>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Legal</div>
+        <a href="/privacy" class="footer-link">Privacy Policy</a>
+        <a href="/terms" class="footer-link">Terms of Service</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Theme toggle for legal pages
+    (function(){
+      var s=localStorage.getItem('summarizer-theme'),p=window.matchMedia('(prefers-color-scheme:dark)').matches,t=s||(p?'dark':'light');
+      document.documentElement.setAttribute('data-theme',t);
+      var icon=document.getElementById('themeIcon');if(icon)icon.className=t==='dark'?'fas fa-sun':'fas fa-moon';
+      var btn=document.getElementById('themeToggle');if(btn)btn.addEventListener('click',function(){
+        var c=document.documentElement.getAttribute('data-theme'),n=c==='dark'?'light':'dark';
+        document.documentElement.setAttribute('data-theme',n);localStorage.setItem('summarizer-theme',n);
+        if(icon)icon.className=n==='dark'?'fas fa-sun':'fas fa-moon';
+      });
+    })();
+  </script>
+</body>
+</html>
