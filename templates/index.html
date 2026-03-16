@@ -5,6 +5,9 @@
   <title>AI Summarizer — Smart Content Compression</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Transform lengthy text into concise, meaningful summaries powered by AI. Supports text, file upload, and URL input.">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32.png') }}">
+  <link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='favicon.png') }}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;0,9..40,800;1,9..40,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -16,15 +19,12 @@
   <nav class="top-nav">
     <div class="nav-inner">
       <div class="nav-left">
-        <div class="nav-logo">
+        <a href="/" class="nav-logo">
           <div class="logo-icon"><i class="fas fa-bolt"></i></div>
           <span class="logo-text">AI <em>Summarizer</em></span>
-        </div>
+        </a>
       </div>
       <div class="nav-right">
-        <a href="https://ba-copilot-mvp.vercel.app" target="_blank" rel="noopener" class="nav-link-ba">
-          <i class="fas fa-arrow-left"></i> BA Copilot
-        </a>
         <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
           <i class="fas fa-moon" id="themeIcon"></i>
         </button>
@@ -32,8 +32,10 @@
     </div>
   </nav>
 
-  <!-- ═══ HERO ═══ -->
+  <!-- ═══ HERO WITH GRID LINES ═══ -->
   <header class="hero-section">
+    <div class="hero-grid-left"></div>
+    <div class="hero-grid-right"></div>
     <div class="hero-inner">
       <div class="hero-badge"><i class="fas fa-sparkles"></i> AI-Powered Summarization</div>
       <h1 class="hero-title">Summarize anything,<br><em>in seconds.</em></h1>
@@ -41,7 +43,7 @@
     </div>
   </header>
 
-  <div class="container main-container">
+  <div class="main-container">
 
     {% if error %}
     <div class="error-banner">
@@ -54,7 +56,7 @@
     <!-- ═══ CONTROLS ═══ -->
     <div class="controls-card">
       <div class="controls-row">
-        <div class="control-group">
+        <div class="control-group control-length">
           <label class="control-label"><i class="fas fa-ruler-horizontal"></i> Length</label>
           <div class="length-control">
             <input type="range" min="1" max="3" step="1" value="{{ selected_length or '2' }}" class="custom-range" id="lengthRange">
@@ -65,7 +67,7 @@
             </div>
           </div>
         </div>
-        <div class="control-group">
+        <div class="control-group control-style">
           <label class="control-label"><i class="fas fa-sliders-h"></i> Style</label>
           <div class="mode-tabs">
             <button class="summary-mode-tab mode-tab {% if not selected_summary_mode or selected_summary_mode == 'standard' %}active{% endif %}" data-mode="standard">Standard</button>
@@ -73,13 +75,15 @@
             <button class="summary-mode-tab mode-tab {% if selected_summary_mode == 'creative' %}active{% endif %}" data-mode="creative">Creative</button>
           </div>
         </div>
-        <div class="control-group">
+      </div>
+      <div class="controls-row" style="margin-top:16px">
+        <div class="control-group" style="min-width:0">
           <label class="control-label"><i class="fas fa-align-left"></i> Format</label>
           <div class="mode-tabs">
-            <button class="format-tab mode-tab {% if not selected_mode or selected_mode == 'paragraph' %}active{% endif %}" data-mode="paragraph">Paragraph</button>
-            <button class="format-tab mode-tab {% if selected_mode == 'bullets' %}active{% endif %}" data-mode="bullets">Bullets</button>
-            <button class="format-tab mode-tab {% if selected_mode == 'takeaways' %}active{% endif %}" data-mode="takeaways">Key Points</button>
-            <button class="format-tab mode-tab {% if selected_mode == 'handwriting' %}active{% endif %}" data-mode="handwriting">Handwriting</button>
+            <button class="format-tab mode-tab {% if not selected_mode or selected_mode == 'paragraph' %}active{% endif %}" data-mode="paragraph"><i class="fas fa-paragraph"></i> Paragraph</button>
+            <button class="format-tab mode-tab {% if selected_mode == 'bullets' %}active{% endif %}" data-mode="bullets"><i class="fas fa-list-ul"></i> Bullets</button>
+            <button class="format-tab mode-tab {% if selected_mode == 'takeaways' %}active{% endif %}" data-mode="takeaways"><i class="fas fa-lightbulb"></i> Key Points</button>
+            <button class="format-tab mode-tab {% if selected_mode == 'handwriting' %}active{% endif %}" data-mode="handwriting"><i class="fas fa-pen-fancy"></i> Handwriting</button>
           </div>
         </div>
       </div>
@@ -176,11 +180,6 @@
       <div class="card-inner output-inner">
         {% if summarized_text %}
           <div class="summary-output {% if selected_mode == 'handwriting' %}handwriting-font{% endif %}">{{ summarized_text }}</div>
-          {% if model_used %}
-          <div class="model-badge">
-            <i class="fas fa-microchip"></i> {{ model_used.split('/')[-1].split(':')[0].replace('-', ' ').title() }}
-          </div>
-          {% endif %}
           <div class="output-stats">
             <span class="stat-pill"><i class="fas fa-chart-line"></i> {{ ((summary_word_count / input_word_count * 100) | round | int) }}% of original</span>
             <span class="stat-pill"><i class="fas fa-file-word"></i> {{ summary_word_count }} words</span>
@@ -251,7 +250,7 @@
       </div>
       <div class="footer-links">
         <a href="https://ba-copilot-mvp.vercel.app" target="_blank" rel="noopener">BA Copilot</a>
-        <a href="https://ba-copilot-mvp.vercel.app/#services" target="_blank" rel="noopener">Services</a>
+        <a href="https://ba-copilot-mvp.vercel.app" target="_blank" rel="noopener">Services</a>
       </div>
       <div class="footer-legal">© 2026 AI Summarizer. All rights reserved.</div>
     </div>

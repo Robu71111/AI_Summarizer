@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const clearHistoryBtn = document.getElementById('clearHistory');
   const summaryOutputElement = document.querySelector('.summary-output');
 
-  // ═══ CUSTOM INPUT TABS (replaces Bootstrap tabs) ═══
+  // ═══ CUSTOM INPUT TABS ═══
   const inputTabs = document.querySelectorAll('.input-tab');
   const inputPanels = document.querySelectorAll('.input-panel');
 
@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // ═══ THEME ═══
   function initTheme() {
-    const saved = localStorage.getItem('theme');
+    const saved = localStorage.getItem('summarizer-theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const theme = saved || (prefersDark ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', theme);
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const current = document.documentElement.getAttribute('data-theme');
     const next = current === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('theme', next);
+    localStorage.setItem('summarizer-theme', next);
     updateThemeIcon(next);
   }
 
@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const text = userTextArea.value.trim();
     const words = getWordCount(text);
     const chars = text.length;
-    inputStats.textContent = `${words} words · ${chars} characters`;
+    inputStats.textContent = words + ' words \u00b7 ' + chars + ' characters';
     if (chars > 48000) {
       inputStats.style.color = 'var(--danger)';
     } else if (chars > 40000) {
@@ -108,9 +108,9 @@ document.addEventListener('DOMContentLoaded', function() {
       updateLengthUI(e.target.value);
     });
   }
-  lengthOptions.forEach(opt => {
+  lengthOptions.forEach(function(opt) {
     opt.addEventListener('click', function() {
-      const val = this.getAttribute('data-value');
+      var val = this.getAttribute('data-value');
       if (lengthRange) lengthRange.value = val;
       if (lengthInput) lengthInput.value = val;
       updateLengthUI(val);
@@ -118,22 +118,22 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   function updateLengthUI(value) {
-    lengthOptions.forEach(opt => {
+    lengthOptions.forEach(function(opt) {
       opt.classList.toggle('active', opt.getAttribute('data-value') === value);
     });
   }
 
-  formatTabs.forEach(tab => {
+  formatTabs.forEach(function(tab) {
     tab.addEventListener('click', function() {
-      formatTabs.forEach(t => t.classList.remove('active'));
+      formatTabs.forEach(function(t) { t.classList.remove('active'); });
       this.classList.add('active');
       if (modeInput) modeInput.value = this.getAttribute('data-mode');
     });
   });
 
-  summaryModeTabs.forEach(tab => {
+  summaryModeTabs.forEach(function(tab) {
     tab.addEventListener('click', function() {
-      summaryModeTabs.forEach(t => t.classList.remove('active'));
+      summaryModeTabs.forEach(function(t) { t.classList.remove('active'); });
       this.classList.add('active');
       if (summaryModeInput) summaryModeInput.value = this.getAttribute('data-mode');
     });
@@ -142,9 +142,9 @@ document.addEventListener('DOMContentLoaded', function() {
   // ═══ FORM SUBMIT ═══
   if (summarizeForm) {
     summarizeForm.addEventListener('submit', function(e) {
-      const activeTab = document.querySelector('.input-tab.active');
-      const target = activeTab ? activeTab.getAttribute('data-target') : 'text-panel';
-      let hasContent = false;
+      var activeTab = document.querySelector('.input-tab.active');
+      var target = activeTab ? activeTab.getAttribute('data-target') : 'text-panel';
+      var hasContent = false;
 
       if (target === 'text-panel') hasContent = userTextArea && userTextArea.value.trim().length > 0;
       else if (target === 'file-panel') hasContent = fileUpload && fileUpload.files.length > 0;
@@ -161,44 +161,48 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // ═══ COPY ═══
-  async function copyToClipboard(text) {
-    try {
-      await navigator.clipboard.writeText(text);
-      showNotification('Copied to clipboard!', 'success');
-    } catch {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.position = 'fixed';
-      ta.style.left = '-9999px';
-      document.body.appendChild(ta);
-      ta.select();
-      try { document.execCommand('copy'); showNotification('Copied!', 'success'); }
-      catch { showNotification('Copy failed', 'error'); }
-      document.body.removeChild(ta);
+  function copyToClipboard(text) {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(function() {
+        showNotification('Copied to clipboard!', 'success');
+      }).catch(function() {
+        fallbackCopy(text);
+      });
+    } else {
+      fallbackCopy(text);
     }
+  }
+
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); showNotification('Copied!', 'success'); }
+    catch(e) { showNotification('Copy failed', 'error'); }
+    document.body.removeChild(ta);
   }
 
   if (copyBtn && summaryOutputElement) {
     copyBtn.addEventListener('click', function() {
-      const text = summaryOutputElement.textContent.trim();
+      var text = summaryOutputElement.textContent.trim();
       if (text.length > 0) copyToClipboard(text);
       else showNotification('Nothing to copy!', 'warning');
     });
   }
 
   // ═══ EXPORT TXT ═══
-  const exportTxt = document.getElementById('exportTxt');
+  var exportTxt = document.getElementById('exportTxt');
   if (exportTxt && summaryOutputElement) {
     exportTxt.addEventListener('click', function() {
-      const text = summaryOutputElement.textContent.trim();
+      var text = summaryOutputElement.textContent.trim();
       if (!text) return;
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = '/export/txt';
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = 'summary_text';
-      input.value = text;
+      var form = document.createElement('form');
+      form.method = 'POST'; form.action = '/export/txt';
+      var input = document.createElement('input');
+      input.type = 'hidden'; input.name = 'summary_text'; input.value = text;
       form.appendChild(input);
       document.body.appendChild(form);
       form.submit();
@@ -207,24 +211,19 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // ═══ EXPORT PDF ═══
-  const exportPdf = document.getElementById('exportPdf');
+  var exportPdf = document.getElementById('exportPdf');
   if (exportPdf && summaryOutputElement) {
     exportPdf.addEventListener('click', function() {
-      const text = summaryOutputElement.textContent.trim();
+      var text = summaryOutputElement.textContent.trim();
       if (!text) return;
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = '/export/pdf';
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = 'summary_text';
-      input.value = text;
-      const modeField = document.createElement('input');
-      modeField.type = 'hidden';
-      modeField.name = 'mode';
+      var form = document.createElement('form');
+      form.method = 'POST'; form.action = '/export/pdf';
+      var input = document.createElement('input');
+      input.type = 'hidden'; input.name = 'summary_text'; input.value = text;
+      var modeField = document.createElement('input');
+      modeField.type = 'hidden'; modeField.name = 'mode';
       modeField.value = modeInput ? modeInput.value : 'paragraph';
-      form.appendChild(input);
-      form.appendChild(modeField);
+      form.appendChild(input); form.appendChild(modeField);
       document.body.appendChild(form);
       form.submit();
       document.body.removeChild(form);
@@ -235,28 +234,26 @@ document.addEventListener('DOMContentLoaded', function() {
   document.querySelectorAll('.translate-option').forEach(function(item) {
     item.addEventListener('click', function(e) {
       e.preventDefault();
-      const lang = this.getAttribute('data-lang');
-      const text = summaryOutputElement ? summaryOutputElement.textContent.trim() : '';
+      var lang = this.getAttribute('data-lang');
+      var text = summaryOutputElement ? summaryOutputElement.textContent.trim() : '';
       if (!text) { showNotification('No summary to translate!', 'warning'); return; }
-
       if (loadingOverlay) loadingOverlay.classList.add('active');
-
       fetch('/translate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: text, target_language: lang })
       })
-      .then(r => r.json())
-      .then(data => {
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
         if (loadingOverlay) loadingOverlay.classList.remove('active');
         if (data.success && data.text) {
           summaryOutputElement.textContent = data.text;
-          showNotification(`Translated to ${lang}!`, 'success');
+          showNotification('Translated to ' + lang + '!', 'success');
         } else {
           showNotification(data.error || 'Translation failed', 'error');
         }
       })
-      .catch(() => {
+      .catch(function() {
         if (loadingOverlay) loadingOverlay.classList.remove('active');
         showNotification('Translation failed', 'error');
       });
@@ -265,47 +262,46 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // ═══ NOTIFICATION ═══
   function showNotification(message, type) {
-    const existing = document.querySelector('.notification-toast');
+    var existing = document.querySelector('.notification-toast');
     if (existing) existing.remove();
-    const toast = document.createElement('div');
-    toast.className = `notification-toast alert-${type || 'success'}`;
-    const icons = { success:'fa-check-circle', error:'fa-exclamation-circle', info:'fa-info-circle', warning:'fa-exclamation-triangle' };
-    toast.innerHTML = `<i class="fas ${icons[type] || icons.success}"></i> <span>${message}</span>`;
+    var toast = document.createElement('div');
+    toast.className = 'notification-toast alert-' + (type || 'success');
+    var icons = { success:'fa-check-circle', error:'fa-exclamation-circle', info:'fa-info-circle', warning:'fa-exclamation-triangle' };
+    toast.innerHTML = '<i class="fas ' + (icons[type] || icons.success) + '"></i> <span>' + message + '</span>';
     document.body.appendChild(toast);
-    setTimeout(() => {
+    setTimeout(function() {
       toast.style.opacity = '0';
       toast.style.transform = 'translateY(20px)';
       toast.style.transition = 'all 0.3s ease';
-      setTimeout(() => toast.remove(), 300);
+      setTimeout(function() { toast.remove(); }, 300);
     }, 3000);
   }
 
   // ═══ HISTORY ═══
   function loadHistory() {
     if (!historySection || !historyList) return;
-    const history = JSON.parse(localStorage.getItem('summaryHistory') || '[]');
+    var history = JSON.parse(localStorage.getItem('summaryHistory') || '[]');
     if (history.length === 0) { historySection.style.display = 'none'; return; }
     historySection.style.display = 'block';
     historyList.innerHTML = '';
     history.forEach(function(item, index) {
-      const div = document.createElement('div');
+      var div = document.createElement('div');
       div.className = 'history-item';
-      const date = new Date(item.timestamp);
-      const formatted = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-      div.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <small style="color:var(--t3);font-family:'JetBrains Mono',monospace;font-size:11px">${formatted}</small>
-          <div class="history-item-actions">
-            <button class="btn-export use-btn" style="padding:4px 8px;font-size:11px" title="Restore"><i class="fas fa-redo"></i></button>
-            <button class="btn-export copy-btn" style="padding:4px 8px;font-size:11px" title="Copy"><i class="fas fa-copy"></i></button>
-            <button class="btn-export delete-btn" style="padding:4px 8px;font-size:11px;color:var(--red);border-color:rgba(214,40,40,0.2)" title="Delete"><i class="fas fa-trash"></i></button>
-          </div>
-        </div>
-        <div class="history-item-preview">${escapeHtml(item.summary)}</div>
-        <div style="display:flex;gap:6px;margin-top:8px">
-          <span class="stat-pill" style="font-size:10px;padding:3px 8px">${item.summaryWords} words</span>
-        </div>
-      `;
+      var date = new Date(item.timestamp);
+      var formatted = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+      div.innerHTML =
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
+          '<small style="color:var(--t3);font-family:JetBrains Mono,monospace;font-size:11px">' + formatted + '</small>' +
+          '<div class="history-item-actions">' +
+            '<button class="btn-export use-btn" style="padding:4px 8px;font-size:11px" title="Restore"><i class="fas fa-redo"></i></button>' +
+            '<button class="btn-export copy-btn" style="padding:4px 8px;font-size:11px" title="Copy"><i class="fas fa-copy"></i></button>' +
+            '<button class="btn-export delete-btn" style="padding:4px 8px;font-size:11px;color:var(--red);border-color:rgba(214,40,40,0.2)" title="Delete"><i class="fas fa-trash"></i></button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="history-item-preview">' + escapeHtml(item.summary) + '</div>' +
+        '<div style="display:flex;gap:6px;margin-top:8px">' +
+          '<span class="stat-pill" style="font-size:10px;padding:3px 8px">' + item.summaryWords + ' words</span>' +
+        '</div>';
       div.querySelector('.use-btn').addEventListener('click', function() {
         if (summaryOutputElement) {
           summaryOutputElement.textContent = item.summary;
@@ -315,7 +311,7 @@ document.addEventListener('DOMContentLoaded', function() {
       });
       div.querySelector('.copy-btn').addEventListener('click', function() { copyToClipboard(item.summary); });
       div.querySelector('.delete-btn').addEventListener('click', function() {
-        let h = JSON.parse(localStorage.getItem('summaryHistory') || '[]');
+        var h = JSON.parse(localStorage.getItem('summaryHistory') || '[]');
         h.splice(index, 1);
         localStorage.setItem('summaryHistory', JSON.stringify(h));
         loadHistory();
@@ -326,8 +322,8 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function saveToHistory(item) {
-    let history = JSON.parse(localStorage.getItem('summaryHistory') || '[]');
-    const isDup = history.some(h => h.summary.substring(0,100) === item.summary.substring(0,100));
+    var history = JSON.parse(localStorage.getItem('summaryHistory') || '[]');
+    var isDup = history.some(function(h) { return h.summary.substring(0,100) === item.summary.substring(0,100); });
     if (isDup) return;
     history.unshift(item);
     if (history.length > 10) history = history.slice(0,10);
@@ -336,15 +332,15 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function escapeHtml(text) {
-    const div = document.createElement('div');
+    var div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
   }
 
   // Save current result
   if (summaryOutputElement && summaryOutputElement.textContent.trim().length > 50) {
-    const inputWords = userTextArea ? getWordCount(userTextArea.value) : 0;
-    const summaryText = summaryOutputElement.textContent.trim();
+    var inputWords = userTextArea ? getWordCount(userTextArea.value) : 0;
+    var summaryText = summaryOutputElement.textContent.trim();
     saveToHistory({
       summary: summaryText,
       inputWords: inputWords || (getWordCount(summaryText) * 3),
@@ -370,6 +366,5 @@ document.addEventListener('DOMContentLoaded', function() {
     userTextArea.addEventListener('input', updateWordCount);
     updateWordCount();
   }
-  // Set initial length UI
   if (lengthRange) updateLengthUI(lengthRange.value);
 });
