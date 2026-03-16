@@ -136,6 +136,14 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // History
+  function restoreSummary(text) {
+    if (summaryOutput) {
+      summaryOutput.textContent = text;
+      window.scrollTo({top:summaryOutput.offsetTop-80,behavior:'smooth'});
+      notify('Summary restored!','success');
+    }
+  }
+
   function loadH() {
     if (!historySection || !historyList) return;
     var h = JSON.parse(localStorage.getItem('summaryHistory') || '[]');
@@ -144,10 +152,21 @@ document.addEventListener('DOMContentLoaded', function() {
     h.forEach(function(item, idx) {
       var d = document.createElement('div'); d.className = 'history-item';
       var dt = new Date(item.timestamp), fmt = dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-      d.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px"><small style="color:var(--t3);font-family:JetBrains Mono,monospace;font-size:10px">' + fmt + '</small><div class="history-item-actions"><button class="btn-export use-btn" style="padding:3px 7px;font-size:10px"><i class="fas fa-redo"></i></button><button class="btn-export copy-hbtn" style="padding:3px 7px;font-size:10px"><i class="fas fa-copy"></i></button><button class="btn-export del-btn" style="padding:3px 7px;font-size:10px;color:var(--danger);border-color:rgba(239,68,68,0.2)"><i class="fas fa-trash"></i></button></div></div><div class="history-item-preview">' + esc(item.summary) + '</div><div style="margin-top:6px"><span class="stat-pill" style="font-size:9px;padding:2px 7px">' + item.summaryWords + ' words</span></div>';
-      d.querySelector('.use-btn').addEventListener('click', function() { if (summaryOutput) { summaryOutput.textContent = item.summary; window.scrollTo({top:summaryOutput.offsetTop-80,behavior:'smooth'}); notify('Restored!','success'); }});
-      d.querySelector('.copy-hbtn').addEventListener('click', function() { cp(item.summary); });
-      d.querySelector('.del-btn').addEventListener('click', function() { var a = JSON.parse(localStorage.getItem('summaryHistory')||'[]'); a.splice(idx,1); localStorage.setItem('summaryHistory',JSON.stringify(a)); loadH(); notify('Deleted','info'); });
+      d.innerHTML =
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
+          '<small style="color:var(--t3);font-family:JetBrains Mono,monospace;font-size:11px">' + fmt + '</small>' +
+          '<div class="history-item-actions">' +
+            '<button class="hist-btn use-btn" title="Restore this summary"><i class="fas fa-rotate-right"></i></button>' +
+            '<button class="hist-btn copy-hbtn" title="Copy to clipboard"><i class="fas fa-copy"></i></button>' +
+            '<button class="hist-btn del-btn hist-btn-danger" title="Delete from history"><i class="fas fa-trash-can"></i></button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="history-item-preview history-item-clickable" title="Click to restore this summary">' + esc(item.summary) + '</div>' +
+        '<div style="margin-top:8px"><span class="stat-pill" style="font-size:10px;padding:3px 9px">' + item.summaryWords + ' words</span></div>';
+      d.querySelector('.use-btn').addEventListener('click', function(e) { e.stopPropagation(); restoreSummary(item.summary); });
+      d.querySelector('.history-item-clickable').addEventListener('click', function() { restoreSummary(item.summary); });
+      d.querySelector('.copy-hbtn').addEventListener('click', function(e) { e.stopPropagation(); cp(item.summary); });
+      d.querySelector('.del-btn').addEventListener('click', function(e) { e.stopPropagation(); var a = JSON.parse(localStorage.getItem('summaryHistory')||'[]'); a.splice(idx,1); localStorage.setItem('summaryHistory',JSON.stringify(a)); loadH(); notify('Deleted','info'); });
       historyList.appendChild(d);
     });
   }

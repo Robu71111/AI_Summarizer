@@ -190,7 +190,15 @@ a{color:var(--primary);text-decoration:none}a:hover{color:var(--primary-hover)}
 .history-item{padding:12px 16px;border-radius:var(--r-md);background:var(--bg-card);border:1px solid var(--b1);transition:all 0.15s;cursor:pointer}
 .history-item:hover{border-color:var(--b2);background:var(--bg-s2)}
 .history-item-preview{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:var(--t3)}
-.history-item-actions{display:flex;gap:3px}
+.history-item-actions{display:flex;gap:4px}
+.history-item-clickable{cursor:pointer;transition:color 0.15s}
+.history-item-clickable:hover{color:var(--t1)}
+
+/* History action buttons */
+.hist-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--b1);background:var(--bg-s2);color:var(--t3);display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;transition:all 0.15s;position:relative}
+.hist-btn:hover{color:var(--sky);border-color:var(--sky);background:var(--primary-soft);transform:translateY(-1px)}
+.hist-btn-danger:hover{color:var(--danger);border-color:var(--danger);background:rgba(239,68,68,0.1)}
+.hist-btn[title]:hover::after{content:attr(title);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);padding:4px 10px;border-radius:6px;background:var(--bg-s3);border:1px solid var(--b2);color:var(--t1);font-size:11px;font-weight:600;white-space:nowrap;pointer-events:none;z-index:10}
 
 /* ═══ FEATURES ═══ */
 .features-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:48px}
