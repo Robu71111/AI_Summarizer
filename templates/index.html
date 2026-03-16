@@ -114,7 +114,7 @@
     <div class="controls-card">
       <div class="controls-row">
         <div class="control-group control-length">
-          <label class="control-label"><i class="fas fa-ruler-horizontal"></i> Length</label>
+          <label class="control-label"><i class="fas fa-arrows-left-right"></i> Length</label>
           <div class="length-control">
             <input type="range" min="1" max="3" step="1" value="{{ selected_length or '2' }}" class="custom-range" id="lengthRange">
             <div class="length-labels">
@@ -125,18 +125,20 @@
           </div>
         </div>
         <div class="control-group">
-          <label class="control-label"><i class="fas fa-sliders-h"></i> Style</label>
+          <label class="control-label"><i class="fas fa-wand-magic-sparkles"></i> Style</label>
           <div class="mode-tabs">
             <button class="summary-mode-tab mode-tab {% if not selected_summary_mode or selected_summary_mode == 'standard' %}active{% endif %}" data-mode="standard">Standard</button>
             <button class="summary-mode-tab mode-tab {% if selected_summary_mode == 'formal' %}active{% endif %}" data-mode="formal">Formal</button>
             <button class="summary-mode-tab mode-tab {% if selected_summary_mode == 'creative' %}active{% endif %}" data-mode="creative">Creative</button>
           </div>
         </div>
-        <div class="control-group">
-          <label class="control-label"><i class="fas fa-align-left"></i> Format</label>
-          <div class="mode-tabs">
+      </div>
+      <div class="controls-row controls-row-format">
+        <div class="control-group control-format-full">
+          <label class="control-label"><i class="fas fa-table-columns"></i> Output Format</label>
+          <div class="mode-tabs format-tabs-row">
             <button class="format-tab mode-tab {% if not selected_mode or selected_mode == 'paragraph' %}active{% endif %}" data-mode="paragraph">Paragraph</button>
-            <button class="format-tab mode-tab {% if selected_mode == 'bullets' %}active{% endif %}" data-mode="bullets">Bullets</button>
+            <button class="format-tab mode-tab {% if selected_mode == 'bullets' %}active{% endif %}" data-mode="bullets">Bullet List</button>
             <button class="format-tab mode-tab {% if selected_mode == 'takeaways' %}active{% endif %}" data-mode="takeaways">Key Points</button>
             <button class="format-tab mode-tab {% if selected_mode == 'handwriting' %}active{% endif %}" data-mode="handwriting">Handwriting</button>
           </div>
